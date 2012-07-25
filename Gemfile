@@ -8,6 +8,7 @@ gem "haml-rails", ">= 0.3.4", :group => :development
 
 group :assets do
   gem "sass-rails"
+  gem "coffee-rails"
   gem "uglifier"
   gem "twitter-bootstrap-rails"
   gem "therubyracer", :platform => :ruby
