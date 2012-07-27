@@ -42,4 +42,17 @@ describe Signature do
       end
     end
   end
+
+  describe "stamp" do
+    it "should be generated before validation when there is no previous stamp" do
+      s = Signature.create
+      s.stamp.should match(/\A[0-9]{14,20}\Z/)
+    end
+
+    it "should not be generated before validation when there is a previous stamp" do
+      s = Signature.new
+      s.stamp = "foobar"
+      s.stamp.should == "foobar"
+    end
+  end
 end

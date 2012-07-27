@@ -17,9 +17,16 @@ class Signature < ActiveRecord::Base
   validates :accept_non_eu_server, presence: true, acceptance: {accept: true}
   validates :accept_science, presence: true, acceptance: {accept: true}
 
+  before_validation :generate_stamp
+
+  private
+
+  def generate_stamp
+    if self.stamp.blank?
+      self.stamp = DateTime.now.strftime("%Y%m%d%H%M%S") + rand(100000).to_s
+    end
+  end
+
   # TO-DO: Missing validations for occupancy_county, first_names, last_name.
   # Looks like those need to be conditional validations.
-
-  # TO-DO: Set stamp when created a new Signature
-  # s.stamp = DateTime.now.strftime("%Y%m%d%H%M%S") + rand(100000).to_s
 end
