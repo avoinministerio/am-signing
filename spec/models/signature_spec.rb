@@ -5,6 +5,9 @@ describe Signature do
     it { should be_accessible(:citizen_id) }
     it { should be_accessible(:idea_id) }
     it { should_not be_accessible(:state) }
+    it { should be_accessible(:idea_title) }
+    it { should be_accessible(:idea_date) }
+    it { should be_accessible(:idea_mac) }
     it { should be_accessible(:first_names) }
     it { should be_accessible(:last_name) }
     it { should be_accessible(:birth_date) }
