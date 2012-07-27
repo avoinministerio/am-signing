@@ -13,9 +13,9 @@ class Signature < ActiveRecord::Base
   validates :stamp, presence: true, format: { with: /\A[0-9]{14,20}\Z/ }
   validates :state, :inclusion => { :in => VALID_STATES }
   validates :accept_publicity, :inclusion => { :in => VALID_ACCEPT_PUBLICITY_VALUES }
-  validates :accept_general, presence: true, acceptance: true
-  validates :accept_non_eu_server, presence: true, acceptance: true
-  validates :accept_science, presence: true, acceptance: true
+  validates :accept_general, presence: true, acceptance: {accept: true}
+  validates :accept_non_eu_server, presence: true, acceptance: {accept: true}
+  validates :accept_science, presence: true, acceptance: {accept: true}
 
   # TO-DO: Missing validations for occupancy_county, first_names, last_name.
   # Looks like those need to be conditional validations.
