@@ -5,6 +5,7 @@ gem 'sqlite3'
 gem 'jquery-rails'
 gem "haml", ">= 3.1.6"
 gem "haml-rails", ">= 0.3.4", :group => :development
+gem "rails-i18n"
 
 group :assets do
   gem "sass-rails"
@@ -17,4 +18,5 @@ end
 group :test, :development do
   gem "factory_girl_rails"
   gem "rspec-rails", "~> 2.0"
+  gem "shoulda-matchers"
 end
