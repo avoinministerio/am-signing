@@ -1,5 +1,5 @@
 class Signature < ActiveRecord::Base
-  VALID_STATES = %w(init query returned cancelled rejected authenticated)
+  VALID_STATES = %w(init returned cancelled rejected authenticated)
   VALID_ACCEPT_PUBLICITY_VALUES = %w(immediately normal)
 
   attr_accessible :first_names, :last_name, :birth_date, :occupancy_county, :vow,
