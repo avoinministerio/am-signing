@@ -15,6 +15,11 @@ group :assets do
   gem "therubyracer", :platform => :ruby
 end
 
+group :development do
+  gem "guard-rspec"
+  gem "guard-spork" 
+end
+
 group :test, :development do
   gem "factory_girl_rails"
   gem "rspec-rails", "~> 2.0"
