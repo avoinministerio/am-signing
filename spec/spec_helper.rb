@@ -51,7 +51,7 @@ end
 
 Spork.each_run do
   # This code will be run each time you run your specs.
-
+  Dir[Rails.root.join("spec/support/**/*.rb")].each {|_support_file| require _support_file}
 end
 
 # --- Instructions ---
