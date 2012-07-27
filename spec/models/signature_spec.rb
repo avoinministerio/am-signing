@@ -4,14 +4,14 @@ describe Signature do
   describe "Attributes" do
     it { should be_accessible(:citizen_id) }
     it { should be_accessible(:idea_id) }
-    it { should be_accessible(:state) }
+    it { should_not be_accessible(:state) }
     it { should be_accessible(:first_names) }
     it { should be_accessible(:last_name) }
     it { should be_accessible(:birth_date) }
     it { should be_accessible(:occupancy_county) }
     it { should be_accessible(:vow) }
     it { should be_accessible(:signing_date) }
-    it { should be_accessible(:stamp) }
+    it { should_not be_accessible(:stamp) }
     it { should be_accessible(:accept_publicity) }
 
     describe "Validations" do

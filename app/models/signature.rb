@@ -2,8 +2,8 @@ class Signature < ActiveRecord::Base
   VALID_STATES = %w(init query returned cancelled rejected authenticated)
   VALID_ACCEPT_PUBLICITY_VALUES = %w(immediately normal)
 
-  attr_accessible :state, :first_names, :last_name, :birth_date, :occupancy_county, :vow,
-    :signing_date, :stamp, :accept_general, :accept_non_eu_server, :accept_publicity,
+  attr_accessible :first_names, :last_name, :birth_date, :occupancy_county, :vow,
+    :signing_date, :accept_general, :accept_non_eu_server, :accept_publicity,
     :accept_science, :idea_id, :citizen_id
 
   validates :idea_id, numericality: { only_integer: true }
