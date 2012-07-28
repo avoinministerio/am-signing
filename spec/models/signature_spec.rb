@@ -21,7 +21,6 @@ describe Signature do
       it { should validate_numericality_of(:citizen_id).only_integer }
       it { should validate_numericality_of(:idea_id).only_integer }
       it { should validate_presence_of(:idea_title) }
-      it { should_not allow_value("foobar").for(:stamp) }
 
       describe "state" do
         it "should only allow valid states" do
@@ -44,15 +43,10 @@ describe Signature do
   end
 
   describe "stamp" do
-    it "should be generated before validation when there is no previous stamp" do
-      s = Signature.create
-      s.stamp.should match(/\A[0-9]{14,20}\Z/)
-    end
-
-    it "should not be generated before validation when there is a previous stamp" do
+    it "should be generated when the Signature is created" do
       s = Signature.new
-      s.stamp = "foobar"
-      s.stamp.should == "foobar"
+      s.save validate: false
+      s.stamp.should match(/\A[0-9]{14,20}\Z/)
     end
   end
 end

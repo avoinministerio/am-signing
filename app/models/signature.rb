@@ -10,21 +10,18 @@ class Signature < ActiveRecord::Base
   validates :citizen_id, numericality: { only_integer: true }
   validates :idea_title, presence: true
   validates :idea_date, presence: true
-  validates :stamp, presence: true, format: { with: /\A[0-9]{14,20}\Z/ }
   validates :state, :inclusion => { :in => VALID_STATES }
   validates :accept_publicity, :inclusion => { :in => VALID_ACCEPT_PUBLICITY_VALUES }
   validates :accept_general, presence: true, acceptance: {accept: true}
   validates :accept_non_eu_server, presence: true, acceptance: {accept: true}
   validates :accept_science, presence: true, acceptance: {accept: true}
 
-  before_validation :generate_stamp
+  before_create :generate_stamp
 
   private
 
   def generate_stamp
-    if self.stamp.blank?
-      self.stamp = DateTime.now.strftime("%Y%m%d%H%M%S") + rand(100000).to_s
-    end
+    self.stamp = DateTime.now.strftime("%Y%m%d%H%M%S") + rand(100000).to_s
   end
 
   # TO-DO: Missing validations for occupancy_county, first_names, last_name.
