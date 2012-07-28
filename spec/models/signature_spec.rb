@@ -22,15 +22,6 @@ describe Signature do
       it { should validate_numericality_of(:idea_id).only_integer }
       it { should validate_presence_of(:idea_title) }
 
-      describe "state" do
-        it "should only allow valid states" do
-          Signature::VALID_STATES.each do |s|
-            should allow_value(s).for(:state)
-          end
-        end
-        it { should_not allow_value("other").for(:state) }
-      end
-
       describe "accept_publicity" do
         it "should only allow valid values" do
           Signature::VALID_ACCEPT_PUBLICITY_VALUES.each do |s|
@@ -47,6 +38,14 @@ describe Signature do
       s = Signature.new
       s.save validate: false
       s.stamp.should match(/\A[0-9]{14,20}\Z/)
+    end
+  end
+
+  describe "state" do
+    it "should set as init when the Signature is created" do
+      s = Signature.new
+      s.save validate: false
+      s.state.should == "init"
     end
   end
 end
