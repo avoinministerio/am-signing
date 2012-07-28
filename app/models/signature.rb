@@ -26,4 +26,6 @@ class Signature < ActiveRecord::Base
 
   # TO-DO: Missing validations for occupancy_county, first_names, last_name.
   # Looks like those need to be conditional validations.
+
+  # TO-DO: Maybe needs a validation is a citizen eligible for voting (i.e. over 18 years old)
 end
