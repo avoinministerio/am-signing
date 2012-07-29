@@ -3,8 +3,8 @@ class Signature < ActiveRecord::Base
   VALID_ACCEPT_PUBLICITY_VALUES = %w(immediately normal)
 
   attr_accessible :first_names, :last_name, :birth_date, :occupancy_county, :vow,
-    :signing_date, :accept_general, :accept_non_eu_server, :accept_publicity,
-    :accept_science, :idea_id, :citizen_id, :idea_title, :idea_date, :idea_mac
+    :accept_general, :accept_non_eu_server, :accept_publicity, :accept_science,
+    :idea_id, :citizen_id, :idea_title, :idea_date, :idea_mac
 
   validates :idea_id, numericality: { only_integer: true }
   validates :citizen_id, numericality: { only_integer: true }
