@@ -6,6 +6,7 @@ gem 'jquery-rails'
 gem "haml", ">= 3.1.6"
 gem "haml-rails", ">= 0.3.4", :group => :development
 gem "rails-i18n"
+gem "simple_form"
 
 group :assets do
   gem "sass-rails"
