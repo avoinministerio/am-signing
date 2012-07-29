@@ -1,6 +1,7 @@
 class Signature < ActiveRecord::Base
   VALID_STATES = %w(init returned cancelled rejected authenticated)
   VALID_ACCEPT_PUBLICITY_VALUES = %w(immediately normal)
+  TIME_LIMIT_IN_MINUTES = 20
 
   attr_accessible :first_names, :last_name, :birth_date, :occupancy_county, :vow,
     :accept_general, :accept_non_eu_server, :accept_publicity, :accept_science,
@@ -33,6 +34,13 @@ class Signature < ActiveRecord::Base
 
   def authenticated?
     self.state == "authenticated"
+  end
+
+  def within_timelimit?
+    #elapsed = DateTime.now - self.created_at #*(60*60*24) # in seconds
+    is_within_timelimit = self.created_at >= DateTime.current.advance(minutes: -TIME_LIMIT_IN_MINUTES)
+    Rails.logger.info "Signature #{self.id} created at #{self.created_at} is not within timelimit (#{TIME_LIMIT_IN_MINUTES} minutes)" unless is_within_timelimit
+    is_within_timelimit
   end
 
   private

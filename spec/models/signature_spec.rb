@@ -71,4 +71,18 @@ describe Signature do
       lambda { @signature.authenticate @first_names, @last_name, nil }.should raise_error ActiveRecord::RecordInvalid
     end
   end
+
+  describe "within_timelimit?" do
+    it "returns true if the signature is created at less than 20 minutes ago" do
+      signature = Signature.new
+      signature.created_at = DateTime.current
+      signature.within_timelimit?.should be_true
+    end
+
+    it "returns false if the signature is created at more than 20 minutes ago" do
+      signature = Signature.new
+      signature.created_at = DateTime.current.advance(minutes: -21)
+      signature.within_timelimit?.should be_false
+    end
+  end
 end
