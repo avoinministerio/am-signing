@@ -36,8 +36,11 @@ class Signature < ActiveRecord::Base
     self.state == "authenticated"
   end
 
+  def repeated_returning?
+    self.state != "init"
+  end
+
   def within_timelimit?
-    #elapsed = DateTime.now - self.created_at #*(60*60*24) # in seconds
     is_within_timelimit = self.created_at >= DateTime.current.advance(minutes: -TIME_LIMIT_IN_MINUTES)
     Rails.logger.info "Signature #{self.id} created at #{self.created_at} is not within timelimit (#{TIME_LIMIT_IN_MINUTES} minutes)" unless is_within_timelimit
     is_within_timelimit
