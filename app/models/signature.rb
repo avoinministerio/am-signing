@@ -10,13 +10,30 @@ class Signature < ActiveRecord::Base
   validates :citizen_id, numericality: { only_integer: true }
   validates :idea_title, presence: true
   validates :idea_date, presence: true
+  validates :state, :inclusion => { :in => VALID_STATES }, if: "persisted?"
   validates :accept_publicity, :inclusion => { :in => VALID_ACCEPT_PUBLICITY_VALUES }
   validates :accept_general, presence: true, acceptance: {accept: true}
   validates :accept_non_eu_server, presence: true, acceptance: {accept: true}
   validates :accept_science, presence: true, acceptance: {accept: true}
+  validates :first_names, presence: true, if: "authenticated?"
+  validates :last_name, presence: true, if: "authenticated?"
+  validates :birth_date, presence: true, if: "authenticated?"
 
   before_create :generate_stamp
   before_create :initialize_state
+
+  def authenticate first_names, last_name, birth_date
+    self.first_names = first_names
+    self.last_name = last_name
+    self.birth_date = birth_date
+    self.state = "authenticated"
+    self.signing_date = DateTime.current.to_date
+    save!
+  end
+
+  def authenticated?
+    self.state == "authenticated"
+  end
 
   private
 
@@ -28,8 +45,7 @@ class Signature < ActiveRecord::Base
     self.state = "init"
   end
 
-  # TO-DO: Missing validations for occupancy_county, first_names, last_name.
-  # Looks like those need to be conditional validations.
+  # TO-DO: Missing validation for occupancy_county. When is this value required?
 
   # TO-DO: Maybe needs a validation is a citizen eligible for voting (i.e. over 18 years old)
 end

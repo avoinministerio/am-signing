@@ -48,4 +48,27 @@ describe Signature do
       s.state.should == "init"
     end
   end
+
+  describe "authenticate" do
+    before do
+      @birth_date = 20.years.ago
+      @first_names = "John Herman"
+      @last_name = "Doe"
+      @signature = FactoryGirl.create :signature
+    end
+
+    it "sets state to authenticated" do
+      @signature.authenticate @first_names, @last_name, @birth_date
+      @signature.state.should == "authenticated"
+    end
+
+    it "set signing_date to today" do
+      @signature.authenticate @first_names, @last_name, @birth_date
+      @signature.signing_date.should == DateTime.current.to_date
+    end
+
+    it "raises an error if validation fails" do
+      lambda { @signature.authenticate @first_names, @last_name, nil }.should raise_error ActiveRecord::RecordInvalid
+    end
+  end
 end
