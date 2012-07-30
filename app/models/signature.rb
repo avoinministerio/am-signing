@@ -64,6 +64,15 @@ class Signature < ActiveRecord::Base
     where(state: "authenticated", id: id).first!
   end
 
+  def sign first_names, last_name, occupancy_county, vow
+    self.first_names = first_names
+    self.last_name = last_name
+    self.occupancy_county = occupancy_county
+    self.vow = vow
+    self.state = "signed"
+    self.signing_date = DateTime.current.to_date
+    self.save
+  end
 
   private
 
