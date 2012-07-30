@@ -60,6 +60,11 @@ class Signature < ActiveRecord::Base
     save!
   end
 
+  def self.find_authenticated id
+    where(state: "authenticated", id: id).first!
+  end
+
+
   private
 
   def generate_stamp
