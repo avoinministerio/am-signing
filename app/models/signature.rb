@@ -1,5 +1,5 @@
 class Signature < ActiveRecord::Base
-  VALID_STATES = %w(init returned cancelled rejected authenticated expired)
+  VALID_STATES = %w(init returned cancelled rejected authenticated expired signed)
   VALID_ACCEPT_PUBLICITY_VALUES = %w(immediately normal)
   TIME_LIMIT_IN_MINUTES = 20
 
@@ -38,6 +38,10 @@ class Signature < ActiveRecord::Base
 
   def repeated_returning?
     self.state != "init"
+  end
+
+  def signed?
+    self.state == "signed"
   end
 
   def within_timelimit?
