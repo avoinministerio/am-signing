@@ -18,6 +18,7 @@ class Signature < ActiveRecord::Base
   validates :accept_general, presence: true, acceptance: {accept: true}
   validates :accept_non_eu_server, presence: true, acceptance: {accept: true}
   validates :accept_science, presence: true, acceptance: {accept: true}
+  validates :vow, presence: true, acceptance: {accept: true}, if: "signed?"
   validates :occupancy_county, inclusion: { in: self.municipalities }, if: "signed?"
   validates :first_names, presence: true, if: "authenticated?"
   validates :last_name, presence: true, if: "authenticated?"
