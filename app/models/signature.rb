@@ -1,4 +1,6 @@
 class Signature < ActiveRecord::Base
+  extend SignaturesHelper
+
   VALID_STATES = %w(init returned cancelled rejected authenticated expired signed)
   VALID_ACCEPT_PUBLICITY_VALUES = %w(immediately normal)
   TIME_LIMIT_IN_MINUTES = 20
@@ -16,6 +18,7 @@ class Signature < ActiveRecord::Base
   validates :accept_general, presence: true, acceptance: {accept: true}
   validates :accept_non_eu_server, presence: true, acceptance: {accept: true}
   validates :accept_science, presence: true, acceptance: {accept: true}
+  validates :occupancy_county, inclusion: { in: self.municipalities }, if: "signed?"
   validates :first_names, presence: true, if: "authenticated?"
   validates :last_name, presence: true, if: "authenticated?"
   validates :birth_date, presence: true, if: "authenticated?"
@@ -65,8 +68,6 @@ class Signature < ActiveRecord::Base
   def initialize_state
     self.state = "init"
   end
-
-  # TO-DO: Missing validation for occupancy_county. When is this value required?
 
   # TO-DO: Maybe needs a validation is a citizen eligible for voting (i.e. over 18 years old)
 end
