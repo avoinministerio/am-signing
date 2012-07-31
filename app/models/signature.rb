@@ -48,17 +48,11 @@ class Signature < ActiveRecord::Base
     self.state == "signed"
   end
 
-  def within_timelimit?
+  def verify_time_limit!
     is_within_timelimit = self.created_at >= DateTime.current.advance(minutes: -TIME_LIMIT_IN_MINUTES)
     Rails.logger.info "Signature #{self.id} created at #{self.created_at} is not within timelimit (#{TIME_LIMIT_IN_MINUTES} minutes)" unless is_within_timelimit
-    is_within_timelimit
-  end
-
-  def expire
-    Rails.logger.info "Signature #{self.id} expired"
-    self.state = "expired"
-    save!
-  end
+    expire unless is_within_timelimit
+  end  
 
   def self.find_authenticated id
     where(state: "authenticated", id: id).first!
@@ -75,6 +69,13 @@ class Signature < ActiveRecord::Base
   end
 
   private
+
+  def expire
+    Rails.logger.info "Signature #{self.id} expired"
+    self.state = "expired"
+    save!
+    raise Signing::SignatureExpired.new(self.id, self.created_at)
+  end
 
   def generate_stamp
     self.stamp = DateTime.now.strftime("%Y%m%d%H%M%S") + rand(100000).to_s

@@ -72,17 +72,17 @@ describe Signature do
     end
   end
 
-  describe "within_timelimit?" do
-    it "returns true if the signature is created at less than 20 minutes ago" do
-      signature = Signature.new
-      signature.created_at = DateTime.current
-      signature.within_timelimit?.should be_true
+  describe "verify_time_limit!" do
+    it "does not change the state of Signature if it is created at less than 20 minutes ago" do
+      signature = FactoryGirl.create :signature
+      signature.verify_time_limit!
+      signature.state.should == "init"
     end
 
-    it "returns false if the signature is created at more than 20 minutes ago" do
-      signature = Signature.new
-      signature.created_at = DateTime.current.advance(minutes: -21)
-      signature.within_timelimit?.should be_false
+    it "expires the Signature if it is created at more than 20 minutes ago" do
+      signature = FactoryGirl.create :signature, created_at: DateTime.current.advance(minutes: -21)
+      lambda { signature.verify_time_limit! }.should raise_error Signing::SignatureExpired
+      signature.state.should == "expired"
     end
   end
 end

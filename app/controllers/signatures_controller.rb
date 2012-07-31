@@ -158,11 +158,9 @@ class SignaturesController < ApplicationController
       Rails.logger.info "Invalid user, not for the same user who initiated the signing"
       @error = "Invalid user"
     else
-      service_name = params[:servicename]
-      if not @signature.within_timelimit?
-        @signature.expire
-        @error = "Not within timelimit"
-      elsif @signature.repeated_returning?
+      @signature.verify_time_limit!
+
+      if @signature.repeated_returning?
         Rails.logger.info "repeated returning"
         @signature.update_attributes(state: "repeated_returning")
         @error = "Repeated returning"
