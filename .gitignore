@@ -75,3 +75,5 @@ db/*.sqlite3
 **.swp
 
 pickle-email-*.html
+
+.rvmrc
