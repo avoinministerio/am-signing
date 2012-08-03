@@ -156,21 +156,15 @@ class SignaturesController < ApplicationController
     @signature = Signature.find_initial_for_citizen(params[:id], current_citizen_id)
     # TO-DO: Impelement checks for valid_returning?. Maybe it should be moved out of this class.
 
-    if @signature.repeated_returning?
-      Rails.logger.info "repeated returning"
-      @signature.update_attributes(state: "repeated_returning")
-      @error = "Repeated returning"
-    else
-      birth_date = hetu_to_birth_date(params["B02K_CUSTID"])
-      first_names, last_name = guess_names(params["B02K_CUSTNAME"], @signature.first_names, @signature.last_name)
+    birth_date = hetu_to_birth_date(params["B02K_CUSTID"])
+    first_names, last_name = guess_names(params["B02K_CUSTNAME"], @signature.first_names, @signature.last_name)
 
-      @signature.authenticate first_names, last_name, birth_date
+    @signature.authenticate first_names, last_name, birth_date
 
-      Rails.logger.info "All success, authentication ok, storing into session"
-      session["authenticated_at"]         = DateTime.now
-      session["authenticated_birth_date"] = birth_date
-      session["authenticated_approvals"]  = @signature.id
-    end
+    Rails.logger.info "All success, authentication ok, storing into session"
+    session["authenticated_at"]         = DateTime.now
+    session["authenticated_birth_date"] = birth_date
+    session["authenticated_approvals"]  = @signature.id
 
     respond_with @signature
   end
