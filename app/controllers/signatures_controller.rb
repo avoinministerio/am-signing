@@ -198,11 +198,11 @@ class SignaturesController < ApplicationController
   end
 
   def finalize_signing
-    @signature = Signature.find_authenticated params[:id]
+    @signature = Signature.find_authenticated_by_citizen params[:id], current_citizen_id
 
     # TODO: and duration since last authentication less that threshold. Validation?
-    if @signature.citizen_id == current_citizen_id and @signature.sign params["signature"]["first_names"],
-      params["signature"]["last_name"], params["signature"]["occupancy_county"], params["signature"]["vow"]
+    if @signature.sign params["signature"]["first_names"], params["signature"]["last_name"],
+      params["signature"]["occupancy_county"], params["signature"]["vow"]
       # TO-DO: create Service Identifying MAC
       redirect_to(session[:am_success_url])
     else

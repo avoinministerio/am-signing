@@ -51,8 +51,8 @@ class Signature < ActiveRecord::Base
     self.state == "signed"
   end
 
-  def self.find_authenticated id
-    where(state: "authenticated", id: id).first!
+  def self.find_authenticated_by_citizen id, citizen_id
+    where(state: "authenticated", id: id, citizen_id: citizen_id).first!
   end
 
   def self.find_initial_for_citizen id, citizen_id
