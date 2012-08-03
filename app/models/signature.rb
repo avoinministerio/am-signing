@@ -47,10 +47,6 @@ class Signature < ActiveRecord::Base
     self.state == "authenticated"
   end
 
-  def repeated_returning?
-    self.state != "init"
-  end
-
   def signed?
     self.state == "signed"
   end
