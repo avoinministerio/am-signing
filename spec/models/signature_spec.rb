@@ -76,6 +76,14 @@ describe Signature do
       lambda { signature.authenticate @first_names, @last_name, @birth_date }.should raise_error SignatureExpired
       signature.state.should == "expired"
     end
+
+    it "raises InvalidSignatureState if trying to re-authenticate a Signature" do
+      # Other than init
+      @signature.state = "authenticated"
+      @signature.save validate: false
+
+      lambda { @signature.authenticate @first_names, @last_name, @birth_date }.should raise_error InvalidSignatureState
+    end
   end
 
   describe "is_within_time_limit?" do

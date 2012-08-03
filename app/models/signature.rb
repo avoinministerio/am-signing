@@ -29,6 +29,7 @@ class Signature < ActiveRecord::Base
 
   def authenticate first_names, last_name, birth_date
     expire unless is_within_time_limit?
+    raise InvalidSignatureState.new("init", self) unless state == "init"
 
     self.first_names = first_names
     self.last_name = last_name
