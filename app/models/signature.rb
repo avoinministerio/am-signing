@@ -78,7 +78,7 @@ class Signature < ActiveRecord::Base
     Rails.logger.info "Signature #{self.id} expired"
     self.state = "expired"
     save!
-    raise Signing::SignatureExpired.new(self.id, self.created_at)
+    raise SignatureExpired.new(self.id, self.created_at)
   end
 
   def generate_stamp

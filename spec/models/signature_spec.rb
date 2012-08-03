@@ -81,7 +81,7 @@ describe Signature do
 
     it "expires the Signature if it is created at more than 20 minutes ago" do
       signature = FactoryGirl.create :signature, created_at: DateTime.current.advance(minutes: -21)
-      lambda { signature.verify_time_limit! }.should raise_error Signing::SignatureExpired
+      lambda { signature.verify_time_limit! }.should raise_error SignatureExpired
       signature.state.should == "expired"
     end
   end
