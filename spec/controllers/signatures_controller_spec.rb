@@ -32,7 +32,7 @@ describe SignaturesController do
     end
   end
 
-  describe "GET returning" do
+  describe "GET 'returning'" do
     describe "with valid arguments" do
       before do
         @signature = FactoryGirl.create :signature, first_names: "John", last_name: "Doe"
@@ -48,6 +48,20 @@ describe SignaturesController do
       it "renders the returning view" do
         get :returning, @parameters
         response.should render_template("returning")
+      end
+    end
+
+    describe "with invalid arguments" do
+      before do
+        @signature = FactoryGirl.create :signature, first_names: "John", last_name: "Doe"
+        @parameters = {id: @signature.id, servicename: "foobar", B02K_CUSTID: "100785-0352", B02K_CUSTNAME: "John Herman Doe"}
+      end
+
+      it "shows 404 error page if the requested Signature doesn't belong to the citizen" do
+        session[:current_citizen_id] = @signature.citizen_id + 10
+        get :returning, @parameters
+        response.body.should include("404")
+        response.status.should == 404
       end
     end
   end

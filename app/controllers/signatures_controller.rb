@@ -6,6 +6,8 @@ class SignaturesController < ApplicationController
 
   include SignaturesControllerHelpers
 
+  rescue_from ActiveRecord::RecordNotFound, :with => :record_not_found
+
   respond_to :html
 
   # Start signing an idea by selecting a signature provider
@@ -150,31 +152,26 @@ class SignaturesController < ApplicationController
   end
 
   def returning
-    @signature = Signature.find(params[:id])   # TODO: Add find for current_citizen
+    @signature = Signature.find_initial_for_citizen(params[:id], current_citizen_id)
     # TO-DO: Impelement checks for valid_returning?. Maybe it should be moved out of this class.
     # TO-DO: Raise an exception if preconditions do not match (e.g. within_timelimit? is false)
     # Then show a separate view displaying the error
-    if not @signature.citizen_id == current_citizen_id
-      Rails.logger.info "Invalid user, not for the same user who initiated the signing"
-      @error = "Invalid user"
+    @signature.verify_time_limit!
+
+    if @signature.repeated_returning?
+      Rails.logger.info "repeated returning"
+      @signature.update_attributes(state: "repeated_returning")
+      @error = "Repeated returning"
     else
-      @signature.verify_time_limit!
+      birth_date = hetu_to_birth_date(params["B02K_CUSTID"])
+      first_names, last_name = guess_names(params["B02K_CUSTNAME"], @signature.first_names, @signature.last_name)
 
-      if @signature.repeated_returning?
-        Rails.logger.info "repeated returning"
-        @signature.update_attributes(state: "repeated_returning")
-        @error = "Repeated returning"
-      else
-        birth_date = hetu_to_birth_date(params["B02K_CUSTID"])
-        first_names, last_name = guess_names(params["B02K_CUSTNAME"], @signature.first_names, @signature.last_name)
+      @signature.authenticate first_names, last_name, birth_date
 
-        @signature.authenticate first_names, last_name, birth_date
-
-        Rails.logger.info "All success, authentication ok, storing into session"
-        session["authenticated_at"]         = DateTime.now
-        session["authenticated_birth_date"] = birth_date
-        session["authenticated_approvals"]  = @signature.id
-      end
+      Rails.logger.info "All success, authentication ok, storing into session"
+      session["authenticated_at"]         = DateTime.now
+      session["authenticated_birth_date"] = birth_date
+      session["authenticated_approvals"]  = @signature.id
     end
 
     respond_with @signature
@@ -223,6 +220,11 @@ class SignaturesController < ApplicationController
   end
 
   private
+
+  def record_not_found
+    Rails.logger.info "Signature not found with ID #{params[:id]} and citizen #{current_citizen_id}"
+    render :text => "404 Signature Not Found", :status => 404
+  end
 
   def current_citizen_id
     session[:current_citizen_id]
