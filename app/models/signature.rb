@@ -28,12 +28,18 @@ class Signature < ActiveRecord::Base
   before_create :initialize_state
 
   def authenticate first_names, last_name, birth_date
+    expire unless is_within_time_limit?
+
     self.first_names = first_names
     self.last_name = last_name
     self.birth_date = birth_date
     self.state = "authenticated"
     self.signing_date = DateTime.current.to_date
     save!
+  end
+
+  def is_within_time_limit?
+    self.created_at >= DateTime.current.advance(minutes: -TIME_LIMIT_IN_MINUTES)
   end
 
   def authenticated?
@@ -47,12 +53,6 @@ class Signature < ActiveRecord::Base
   def signed?
     self.state == "signed"
   end
-
-  def verify_time_limit!
-    is_within_timelimit = self.created_at >= DateTime.current.advance(minutes: -TIME_LIMIT_IN_MINUTES)
-    Rails.logger.info "Signature #{self.id} created at #{self.created_at} is not within timelimit (#{TIME_LIMIT_IN_MINUTES} minutes)" unless is_within_timelimit
-    expire unless is_within_timelimit
-  end  
 
   def self.find_authenticated id
     where(state: "authenticated", id: id).first!

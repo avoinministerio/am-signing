@@ -155,9 +155,6 @@ class SignaturesController < ApplicationController
   def returning
     @signature = Signature.find_initial_for_citizen(params[:id], current_citizen_id)
     # TO-DO: Impelement checks for valid_returning?. Maybe it should be moved out of this class.
-    # TO-DO: Raise an exception if preconditions do not match (e.g. within_timelimit? is false)
-    # Then show a separate view displaying the error
-    @signature.verify_time_limit!
 
     if @signature.repeated_returning?
       Rails.logger.info "repeated returning"

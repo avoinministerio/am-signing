@@ -70,19 +70,23 @@ describe Signature do
     it "raises an error if validation fails" do
       lambda { @signature.authenticate @first_names, @last_name, nil }.should raise_error ActiveRecord::RecordInvalid
     end
-  end
-
-  describe "verify_time_limit!" do
-    it "does not change the state of Signature if it is created at less than 20 minutes ago" do
-      signature = FactoryGirl.create :signature
-      signature.verify_time_limit!
-      signature.state.should == "init"
-    end
 
     it "expires the Signature if it is created at more than 20 minutes ago" do
       signature = FactoryGirl.create :signature, created_at: DateTime.current.advance(minutes: -21)
-      lambda { signature.verify_time_limit! }.should raise_error SignatureExpired
+      lambda { signature.authenticate @first_names, @last_name, @birth_date }.should raise_error SignatureExpired
       signature.state.should == "expired"
+    end
+  end
+
+  describe "is_within_time_limit?" do
+    it "true if Signature is created at less than 20 minutes ago" do
+      signature = FactoryGirl.create :signature
+      signature.is_within_time_limit?.should be_true
+    end
+
+    it "flase if Signature is created at more than 20 minutes ago" do
+      signature = FactoryGirl.create :signature, created_at: DateTime.current.advance(minutes: -21)
+      signature.is_within_time_limit?.should be_false
     end
   end
 end
