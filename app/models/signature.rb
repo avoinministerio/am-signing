@@ -58,6 +58,10 @@ class Signature < ActiveRecord::Base
     where(state: "authenticated", id: id).first!
   end
 
+  def self.find_initial_for_citizen id, citizen_id
+    where(state: "init", id: id, citizen_id: citizen_id).first!
+  end
+
   def sign first_names, last_name, occupancy_county, vow
     self.first_names = first_names
     self.last_name = last_name
