@@ -7,6 +7,7 @@ class SignaturesController < ApplicationController
   include SignaturesControllerHelpers
 
   rescue_from ActiveRecord::RecordNotFound, :with => :record_not_found
+  rescue_from SignatureExpired, :with => :signature_expired
 
   respond_to :html
 
@@ -224,6 +225,10 @@ class SignaturesController < ApplicationController
   def record_not_found
     Rails.logger.info "Signature not found with ID #{params[:id]} and citizen #{current_citizen_id}"
     render :text => "404 Signature Not Found", :status => 404
+  end
+
+  def signature_expired
+    render :text => "403 Signature Expired", :status => 403
   end
 
   def current_citizen_id

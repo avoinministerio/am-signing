@@ -63,6 +63,17 @@ describe SignaturesController do
         response.body.should include("404")
         response.status.should == 404
       end
+
+      it "shows 403 error page if the requested Signature is expired" do
+        signature = FactoryGirl.create :signature, first_names: "John", last_name: "Doe", created_at: DateTime.current.advance(minutes: -21)
+        session[:current_citizen_id] = signature.citizen_id
+        @parameters[:id] = signature.id
+        
+        get :returning, @parameters
+
+        response.body.should include("Expired")
+        response.status.should == 403
+      end
     end
   end
 
