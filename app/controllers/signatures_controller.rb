@@ -8,18 +8,22 @@ class SignaturesController < ApplicationController
 
   rescue_from ActiveRecord::RecordNotFound, :with => :record_not_found
   rescue_from SignatureExpired, :with => :signature_expired
+  rescue_from InvalidMac, :with => :invalid_mac
 
   respond_to :html
 
-  # Start signing an idea by selecting a signature provider
-  def select_provider
+  # Start signing an idea
+  def begin_authenticating
+    validate_hmac!
+
     # ERROR: Check that user has not signed already
     # TODO FIXME: check if user don't have any in-progress signatures
     # ie. cover case when user does not type in the url (when Sign button is not shown)
     @signature = Signature.create! params[:message]
     
     session[:current_citizen_id] = @signature.citizen_id
-    session[:am_success_url] = params[:success_url]
+    session[:am_success_url] = params[:options][:success_url]
+    session[:am_failure_url] = params[:options][:failure_url]
 
     @services = [
       { vers:       "0001",
@@ -75,6 +79,12 @@ class SignaturesController < ApplicationController
 
     render
   end
+
+  def validate_hmac!
+    key = ENV["hmac_key"]
+    calculated_hmac = Signing::HmacSha256.sign_array key, params[:message].merge(params[:options]).values
+    raise InvalidMac.new unless calculated_hmac == params[:hmac]
+  end 
 
   def set_defaults(service)
     service[:action_id] = "701"
@@ -212,6 +222,11 @@ class SignaturesController < ApplicationController
   end
 
   private
+
+  def invalid_mac
+    Rails.logger.info "Invalid MAC for Signature message"
+    render :text => "403 Invalid MAC", :status => 403
+  end
 
   def record_not_found
     Rails.logger.info "Signature not found with ID #{params[:id]} and citizen #{current_citizen_id}"
