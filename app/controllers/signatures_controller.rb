@@ -16,66 +16,19 @@ class SignaturesController < ApplicationController
   def begin_authenticating
     validate_hmac!
 
+    @service = find_service params[:options][:service]
+
     # ERROR: Check that user has not signed already
     # TODO FIXME: check if user don't have any in-progress signatures
     # ie. cover case when user does not type in the url (when Sign button is not shown)
     @signature = Signature.create! params[:message]
     
+    set_signature_specific_values @signature, @service
+    set_mac @service
+
     session[:current_citizen_id] = @signature.citizen_id
     session[:am_success_url] = params[:options][:success_url]
     session[:am_failure_url] = params[:options][:failure_url]
-
-    @services = [
-      { vers:       "0001",
-        rcvid:      "Elisa testi",
-        idtype:     "12",
-        name:       "Elisa Mobiilivarmenne testi",
-        url:        "https://mtupaspreprod.elisa.fi/tunnistus/signature.cmd",
-      },
-      { vers:       "0001",
-        rcvid:      "Avoinministerio",
-        idtype:     "12",
-        name:       "Elisa Mobiilivarmenne",
-        url:        "https://tunnistuspalvelu.elisa.fi/tunnistus/signature.cmd",
-      },
-
-      { vers:       "0002",
-        rcvid:      "AABTUPASID",
-        idtype:     "02",
-        name:       "Alandsbanken testi",
-        url:        "https://online.alandsbanken.fi/ebank/auth/initLogin.do",
-      },
-      { vers:       "0002",
-        rcvid:      "ELEKAMINNID",
-        idtype:     "02",
-        name:       "Alandsbanken",
-        url:        "https://online.alandsbanken.fi/ebank/auth/initLogin.do",
-      },
-      { vers:       "0002",
-        rcvid:      "KANNATUSTUPAS12",
-        idtype:     "02",
-        name:       "Tapiola testi",
-        url:        "https://pankki.tapiola.fi/service/identify",
-      },
-      { vers:       "0002",
-        rcvid:      "KANNATUSTUPAS12",
-        idtype:     "02",
-        name:       "Tapiola",
-        url:        "https://pankki.tapiola.fi/service/identify",
-      },
-
-      { vers:       "0003",
-        rcvid:      "024744039900",
-        idtype:     "02",
-        name:       "Sampo",
-        url:        "https://verkkopankki.sampopankki.fi/SP/tupaha/TupahaApp",
-      },
-    ]
-
-    @services.each do |service|
-      set_defaults(service)
-      set_mac(service)
-    end
 
     render
   end
@@ -84,52 +37,6 @@ class SignaturesController < ApplicationController
     key = ENV["hmac_key"]
     calculated_hmac = Signing::HmacSha256.sign_array key, params[:message].merge(params[:options]).values
     raise InvalidMac.new unless calculated_hmac == params[:hmac]
-  end 
-
-  def set_defaults(service)
-    service[:action_id] = "701"
-    service[:langcode]  = "FI"
-    service[:keyvers]   = "0001"
-    service[:alg]       = "03"
-    service[:stamp]     = @signature.stamp
-
-    service[:mac]       = nil
-    # TO-DO: Needs to be HTTPS in production
-    server = "http://#{request.host_with_port}"
-    Rails.logger.info "Server is #{server}"
-
-    service_name = service[:name].gsub(/\s+/, "")
-    service[:retlink]   = "#{server}/signatures/#{@signature.id}/returning/#{service_name}"
-    service[:canlink]   = "#{server}/signatures/#{@signature.id}/cancelling/#{service_name}"
-    service[:rejlink]   = "#{server}/signatures/#{@signature.id}/rejecting/#{service_name}"
-  end
-
-  def set_mac(service)
-    secret = service_secret(service[:name])
-    keys = [:action_id, :vers, :rcvid, :langcode, :stamp, :idtype, :retlink, :canlink, :rejlink, :keyvers, :alg]
-    vals = keys.map{|k| service[k] }
-    string = vals.join("&") + "&" + secret + "&"
-    service[:mac] = mac(string)
-  end
-
-  def service_secret(service)
-    secret_key = "SECRET_" + service.gsub(/\s/, "")
-
-    Rails.logger.info "Using key #{secret_key}"
-    secret = ENV[secret_key] || ""
-
-    # TODO: precalc the secret into environment variable, and remove this special handling
-    if service == "Alandsbanken" or service == "Tapiola"
-      secret = secret_to_mac_string(secret)
-      Rails.logger.info "Converting secret to #{secret}"
-    end
-
-    unless secret
-      Rails.logger.error "No SECRET found for #{secret_key}"
-      secret = ""
-    end
-
-    secret
   end
 
   def secret_to_mac_string(secret)
@@ -222,6 +129,108 @@ class SignaturesController < ApplicationController
   end
 
   private
+
+  # This method should be replaced with TUPAS gem by jaakkos
+  def find_service name
+    services = [
+      { vers:       "0001",
+        rcvid:      "Elisa testi",
+        idtype:     "12",
+        name:       "Elisa Mobiilivarmenne testi",
+        url:        "https://mtupaspreprod.elisa.fi/tunnistus/signature.cmd",
+      },
+      { vers:       "0001",
+        rcvid:      "Avoinministerio",
+        idtype:     "12",
+        name:       "Elisa Mobiilivarmenne",
+        url:        "https://tunnistuspalvelu.elisa.fi/tunnistus/signature.cmd",
+      },
+      { vers:       "0002",
+        rcvid:      "AABTUPASID",
+        idtype:     "02",
+        name:       "Alandsbanken testi",
+        url:        "https://online.alandsbanken.fi/ebank/auth/initLogin.do",
+      },
+      { vers:       "0002",
+        rcvid:      "ELEKAMINNID",
+        idtype:     "02",
+        name:       "Alandsbanken",
+        url:        "https://online.alandsbanken.fi/ebank/auth/initLogin.do",
+      },
+      { vers:       "0002",
+        rcvid:      "KANNATUSTUPAS12",
+        idtype:     "02",
+        name:       "Tapiola testi",
+        url:        "https://pankki.tapiola.fi/service/identify",
+      },
+      { vers:       "0002",
+        rcvid:      "KANNATUSTUPAS12",
+        idtype:     "02",
+        name:       "Tapiola",
+        url:        "https://pankki.tapiola.fi/service/identify",
+      },
+      { vers:       "0003",
+        rcvid:      "024744039900",
+        idtype:     "02",
+        name:       "Sampo",
+        url:        "https://verkkopankki.sampopankki.fi/SP/tupaha/TupahaApp",
+      }
+    ]
+
+    service = services.find { |s| s[:name] == name }
+    raise ArgumentError.new("Service not found with name \"#{name}\"") unless service != nil
+    
+    set_defaults service
+    service
+  end
+
+  def set_defaults service
+    service[:action_id] = "701"
+    service[:langcode]  = "FI"
+    service[:keyvers]   = "0001"
+    service[:alg]       = "03"
+  end
+
+  def set_signature_specific_values signature, service
+    service[:stamp] = signature.stamp
+
+    # TO-DO: Needs to be HTTPS in production
+    server = "http://#{request.host_with_port}"
+    Rails.logger.info "Server is #{server}"
+
+    service_name = service[:name].gsub(/\s+/, "")
+    service[:retlink] = "#{server}/signatures/#{signature.id}/returning/#{service_name}"
+    service[:canlink] = "#{server}/signatures/#{signature.id}/cancelling/#{service_name}"
+    service[:rejlink] = "#{server}/signatures/#{signature.id}/rejecting/#{service_name}"
+  end
+
+  def set_mac service
+    secret = service_secret(service[:name])
+    keys = [:action_id, :vers, :rcvid, :langcode, :stamp, :idtype, :retlink, :canlink, :rejlink, :keyvers, :alg]
+    vals = keys.map{|k| service[k] }
+    string = vals.join("&") + "&" + secret + "&"
+    service[:mac] = mac(string)
+  end
+
+  def service_secret(service_name)
+    secret_key = "SECRET_" + service_name.gsub(/\s/, "")
+
+    Rails.logger.info "Using key #{secret_key}"
+    secret = ENV[secret_key] || ""
+
+    # TODO: precalc the secret into environment variable, and remove this special handling
+    if service_name == "Alandsbanken" or service_name == "Tapiola"
+      secret = secret_to_mac_string(secret)
+      Rails.logger.info "Converting secret to #{secret}"
+    end
+
+    if secret.blank?
+      Rails.logger.error "No SECRET found for #{secret_key}"
+      raise Exception.new "No secret found for #{secret_key}"
+    end
+
+    secret
+  end
 
   def invalid_mac
     Rails.logger.info "Invalid MAC for Signature message"

@@ -7,6 +7,8 @@ describe SignaturesController do
       @am_success_url = "http://foo.bar"
       @am_failure_url = "http://foo.bar/fail"
       ENV["hmac_key"] = "siikret"
+      ENV["SECRET_Alandsbankentesti"] = "bank_secret"
+      
       message = {
         idea_id: 5,
         idea_title: "a title",
@@ -20,7 +22,7 @@ describe SignaturesController do
       options = {
         success_url: @am_success_url,
         failure_url: @am_failure_url,
-        service: "auth_service"
+        service: "Alandsbanken testi"
       }
       
       @params = { message: message, options: options }
