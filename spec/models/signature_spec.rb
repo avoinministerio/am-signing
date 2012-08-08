@@ -30,6 +30,30 @@ describe Signature do
         end
         it { should_not allow_value("foo").for(:accept_publicity) }
       end
+
+      describe "when in init state" do
+        it "allows blank first_names" do
+          should_not validate_presence_of(:first_names)
+        end
+
+        it "allows blank last_name" do
+          should_not validate_presence_of(:last_name)
+        end
+      end
+
+      describe "when in authenticated state" do
+        it "doesn't allow empty first_names" do
+          s = Signature.new
+          s.state = "authenticated"
+          s.should validate_presence_of(:first_names)
+        end
+
+        it "doesn't allow empty last_name" do
+          s = Signature.new
+          s.state = "authenticated"
+          s.should validate_presence_of(:last_name)
+        end
+      end
     end
   end
 
