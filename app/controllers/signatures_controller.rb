@@ -33,42 +33,6 @@ class SignaturesController < ApplicationController
     render
   end
 
-  def validate_hmac!
-    key = ENV["hmac_key"]
-    calculated_hmac = Signing::HmacSha256.sign_array key, params[:message].merge(params[:options]).values
-    raise InvalidMac.new unless calculated_hmac == params[:hmac]
-  end
-
-  def secret_to_mac_string(secret)
-    str = ""
-    secret.split(//).each_slice(2){|a| str += a.join("").hex.chr}
-    str
-  end
-
-  def mac(string)
-    Digest::SHA256.new.update(string).hexdigest.upcase
-  end
-
-  def valid_returning?(signature, service_name)
-    values = %w(VERS TIMESTMP IDNBR STAMP CUSTNAME KEYVERS ALG CUSTID CUSTTYPE).map {|key| params["B02K_" + key]}
-    string = values[0,9].join("&") + "&" + service_secret(service_name) + "&"
-    params["B02K_MAC"] == mac(string)
-  end
-
-  def hetu_to_birth_date(hetu)
-    date_part = hetu.gsub(/\-.+$/, "")
-    year = date_part[4,2].to_i + hetu_separator_as_years(hetu)
-    birth_date = Date.new(year, date_part[2,2].to_i, date_part[0,2].to_i)
-  end
-
-  # the latter part fixes -, + or A in HETU separator
-  def hetu_separator_as_years(hetu)
-    # convert 010203+1234 as years from 1800
-    # convert 010203A1234 as years from 2000
-    # otherwise it's year from 1900
-    hetu[6,1] == "+" ? 1800 : hetu[6,1] == "A" ? 2000 : 1900
-  end
-
   def returning
     @signature = Signature.find_initial_for_citizen(params[:id], current_citizen_id)
     # TO-DO: Impelement checks for valid_returning?. Maybe it should be moved out of this class.
@@ -202,6 +166,42 @@ class SignaturesController < ApplicationController
     end
 
     secret
+  end
+
+  def validate_hmac!
+    key = ENV["hmac_key"]
+    calculated_hmac = Signing::HmacSha256.sign_array key, params[:message].merge(params[:options]).values
+    raise InvalidMac.new unless calculated_hmac == params[:hmac]
+  end
+
+  def secret_to_mac_string(secret)
+    str = ""
+    secret.split(//).each_slice(2){|a| str += a.join("").hex.chr}
+    str
+  end
+
+  def mac(string)
+    Digest::SHA256.new.update(string).hexdigest.upcase
+  end
+
+  def valid_returning?(signature, service_name)
+    values = %w(VERS TIMESTMP IDNBR STAMP CUSTNAME KEYVERS ALG CUSTID CUSTTYPE).map {|key| params["B02K_" + key]}
+    string = values[0,9].join("&") + "&" + service_secret(service_name) + "&"
+    params["B02K_MAC"] == mac(string)
+  end
+
+  def hetu_to_birth_date(hetu)
+    date_part = hetu.gsub(/\-.+$/, "")
+    year = date_part[4,2].to_i + hetu_separator_as_years(hetu)
+    birth_date = Date.new(year, date_part[2,2].to_i, date_part[0,2].to_i)
+  end
+
+  # the latter part fixes -, + or A in HETU separator
+  def hetu_separator_as_years(hetu)
+    # convert 010203+1234 as years from 1800
+    # convert 010203A1234 as years from 2000
+    # otherwise it's year from 1900
+    hetu[6,1] == "+" ? 1800 : hetu[6,1] == "A" ? 2000 : 1900
   end
 
   def invalid_mac
