@@ -54,6 +54,20 @@ describe Signature do
           s.should validate_presence_of(:last_name)
         end
       end
+
+      describe "when in signed state state" do
+        it "doesn't allow empty first_names" do
+          s = Signature.new
+          s.state = "signed"
+          s.should validate_presence_of(:first_names)
+        end
+
+        it "doesn't allow empty last_name" do
+          s = Signature.new
+          s.state = "signed"
+          s.should validate_presence_of(:last_name)
+        end
+      end
     end
   end
 
