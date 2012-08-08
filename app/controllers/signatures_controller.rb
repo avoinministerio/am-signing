@@ -86,34 +86,6 @@ class SignaturesController < ApplicationController
     respond_with @signature
   end
 
-  def cancelling
-    @signature = Signature.find(params[:id])   # TODO: Add find for current_citizen
-    if not @signature.citizen_id == current_citizen_id
-      Rails.logger.info "Invalid user, not for the same user who initiated the signing"
-      @error = "Invalid user"
-    else
-      service_name = params[:servicename]
-      Rails.logger.info "Cancelling"
-      @signature.update_attributes(state: "cancelled")
-      @error = "Cancelling authentication"
-    end
-    respond_with @signature
-  end
-
-  def rejecting
-    @signature = Signature.find(params[:id])   # TODO: Add find for current_citizen
-    if not @signature.citizen == current_citizen
-      Rails.logger.info "Invalid user, not for the same user who initiated the signing"
-      @error = "Invalid user"
-    else
-      service_name = params[:servicename]
-      Rails.logger.info "Rejecting"
-      @signature.update_attributes(state: "rejected")
-      @error = "Rejecting authentication"
-    end
-    respond_with @signature
-  end
-
   def finalize_signing
     @signature = Signature.find_authenticated_by_citizen params[:id], current_citizen_id
 
