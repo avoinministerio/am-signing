@@ -59,7 +59,6 @@ class SignaturesController < ApplicationController
       # TO-DO: create Service Identifying MAC
       redirect_to(session[:am_success_url])
     else
-      @error = "Trying to alter other citizen or signature with other than authenticated state"
       render "returning"
     end
   end
