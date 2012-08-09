@@ -30,6 +30,44 @@ describe Signature do
         end
         it { should_not allow_value("foo").for(:accept_publicity) }
       end
+
+      describe "when in init state" do
+        it "allows blank first_names" do
+          should_not validate_presence_of(:first_names)
+        end
+
+        it "allows blank last_name" do
+          should_not validate_presence_of(:last_name)
+        end
+      end
+
+      describe "when in authenticated state" do
+        it "doesn't allow empty first_names" do
+          s = Signature.new
+          s.state = "authenticated"
+          s.should validate_presence_of(:first_names)
+        end
+
+        it "doesn't allow empty last_name" do
+          s = Signature.new
+          s.state = "authenticated"
+          s.should validate_presence_of(:last_name)
+        end
+      end
+
+      describe "when in signed state state" do
+        it "doesn't allow empty first_names" do
+          s = Signature.new
+          s.state = "signed"
+          s.should validate_presence_of(:first_names)
+        end
+
+        it "doesn't allow empty last_name" do
+          s = Signature.new
+          s.state = "signed"
+          s.should validate_presence_of(:last_name)
+        end
+      end
     end
   end
 
@@ -70,19 +108,31 @@ describe Signature do
     it "raises an error if validation fails" do
       lambda { @signature.authenticate @first_names, @last_name, nil }.should raise_error ActiveRecord::RecordInvalid
     end
-  end
-
-  describe "verify_time_limit!" do
-    it "does not change the state of Signature if it is created at less than 20 minutes ago" do
-      signature = FactoryGirl.create :signature
-      signature.verify_time_limit!
-      signature.state.should == "init"
-    end
 
     it "expires the Signature if it is created at more than 20 minutes ago" do
       signature = FactoryGirl.create :signature, created_at: DateTime.current.advance(minutes: -21)
-      lambda { signature.verify_time_limit! }.should raise_error Signing::SignatureExpired
+      lambda { signature.authenticate @first_names, @last_name, @birth_date }.should raise_error SignatureExpired
       signature.state.should == "expired"
+    end
+
+    it "raises InvalidSignatureState if trying to re-authenticate a Signature" do
+      # Other than init
+      @signature.state = "authenticated"
+      @signature.save validate: false
+
+      lambda { @signature.authenticate @first_names, @last_name, @birth_date }.should raise_error InvalidSignatureState
+    end
+  end
+
+  describe "is_within_time_limit?" do
+    it "true if Signature is created at less than 20 minutes ago" do
+      signature = FactoryGirl.create :signature
+      signature.is_within_time_limit?.should be_true
+    end
+
+    it "flase if Signature is created at more than 20 minutes ago" do
+      signature = FactoryGirl.create :signature, created_at: DateTime.current.advance(minutes: -21)
+      signature.is_within_time_limit?.should be_false
     end
   end
 end
