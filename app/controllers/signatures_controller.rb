@@ -21,7 +21,28 @@ class SignaturesController < ApplicationController
     # ERROR: Check that user has not signed already
     # TODO FIXME: check if user don't have any in-progress signatures
     # ie. cover case when user does not type in the url (when Sign button is not shown)
-    @signature = Signature.create! params[:message]
+
+    create_params = params.dup
+    # rename few parameters
+    rename_fields = {
+      last_fill_first_names:        :first_names,
+      last_fill_last_names:         :last_name,
+      last_fill_occupancy_county:   :occupancy_county,
+      last_fill_birthdate:          :birth_date,
+      current_citizen_id:           :citizen_id,
+    }.each do |old_field_name, new_field_name|
+      create_params[new_field_name] = create_params.delete old_field_name
+    end
+
+    delete_fields = [
+      :service, :current_citizen_id, :requestor_identifying_mac, 
+      :signing_failure, :signing_success, :valid_shortcut_session_mac, 
+      :controller, :action
+    ].each do |old_field_name|
+      create_params.delete old_field_name
+    end
+
+    @signature = Signature.create! create_params
     
     set_signature_specific_values @signature, @service
     set_mac @service
