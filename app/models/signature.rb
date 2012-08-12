@@ -20,14 +20,17 @@ class Signature < ActiveRecord::Base
   validates :accept_science, presence: true, acceptance: {accept: true}
   validates :vow, presence: true, acceptance: {accept: true}, if: "signed?"
   validates :occupancy_county, inclusion: { in: self.municipalities }, if: "signed?"
-  validates :first_names, presence: true, if: "authenticated?"
-  validates :last_name, presence: true, if: "authenticated?"
+  validates :first_names, presence: true, if: "names_required?"
+  validates :last_name, presence: true, if: "names_required?"
   validates :birth_date, presence: true, if: "authenticated?"
 
   before_create :generate_stamp
   before_create :initialize_state
 
   def authenticate first_names, last_name, birth_date
+    expire unless is_within_time_limit?
+    raise InvalidSignatureState.new("init", self) unless state == "init"
+
     self.first_names = first_names
     self.last_name = last_name
     self.birth_date = birth_date
@@ -36,26 +39,24 @@ class Signature < ActiveRecord::Base
     save!
   end
 
-  def authenticated?
-    self.state == "authenticated"
+  def is_within_time_limit?
+    self.created_at >= DateTime.current.advance(minutes: -TIME_LIMIT_IN_MINUTES)
   end
 
-  def repeated_returning?
-    self.state != "init"
+  def authenticated?
+    self.state == "authenticated"
   end
 
   def signed?
     self.state == "signed"
   end
 
-  def verify_time_limit!
-    is_within_timelimit = self.created_at >= DateTime.current.advance(minutes: -TIME_LIMIT_IN_MINUTES)
-    Rails.logger.info "Signature #{self.id} created at #{self.created_at} is not within timelimit (#{TIME_LIMIT_IN_MINUTES} minutes)" unless is_within_timelimit
-    expire unless is_within_timelimit
-  end  
+  def self.find_authenticated_by_citizen id, citizen_id
+    where(state: "authenticated", id: id, citizen_id: citizen_id).first!
+  end
 
-  def self.find_authenticated id
-    where(state: "authenticated", id: id).first!
+  def self.find_initial_for_citizen id, citizen_id
+    where(state: "init", id: id, citizen_id: citizen_id).first!
   end
 
   def sign first_names, last_name, occupancy_county, vow
@@ -70,11 +71,15 @@ class Signature < ActiveRecord::Base
 
   private
 
+  def names_required?
+    %w(authenticated signed).include? self.state
+  end
+
   def expire
     Rails.logger.info "Signature #{self.id} expired"
     self.state = "expired"
     save!
-    raise Signing::SignatureExpired.new(self.id, self.created_at)
+    raise SignatureExpired.new(self.id, self.created_at)
   end
 
   def generate_stamp
