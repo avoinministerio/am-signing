@@ -111,10 +111,10 @@ describe SignaturesController do
   describe "PUT finalize_signing" do
     describe "with valid arguments" do
       before do
-        @signature = FactoryGirl.create :signature
+        @signature = FactoryGirl.create :signature, first_names: "John", last_name: "Doe"
         session[:current_citizen_id] = @signature.citizen_id
         session[:am_success_url] = "http://foo.bar"
-        @signature.authenticate "John Herman", "Doe", "1980-03-03"
+        @signature.authenticate "Doe John Herman", "1980-03-03"
         @parameters = {id: @signature.id, signature:
           {first_names: "John Herman", last_name: "Doe", vow: true, occupancy_county: "Forssa"}}
       end
@@ -132,9 +132,9 @@ describe SignaturesController do
 
     describe "with invalid arguments" do
       it "redirects to AM success URL" do
-        signature = FactoryGirl.create :signature
+        signature = FactoryGirl.create :signature, first_names: "John", last_name: "Doe"
         session[:current_citizen_id] = signature.citizen_id
-        signature.authenticate "John Herman", "Doe", "1980-03-03"
+        signature.authenticate "Doe John Herman", "1980-03-03"
         parameters = {id: signature.id, signature: {first_names: "John Herman", last_name: "Doe", vow: true}}
 
         put :finalize_signing, parameters

@@ -27,12 +27,12 @@ class Signature < ActiveRecord::Base
   before_create :generate_stamp
   before_create :initialize_state
 
-  def authenticate first_names, last_name, birth_date
+  def authenticate full_name, birth_date
     expire unless is_within_time_limit?
     raise InvalidSignatureState.new("init", self) unless state == "init"
+    
+    guess_names full_name, self.last_name, self.first_names
 
-    self.first_names = first_names
-    self.last_name = last_name
     self.birth_date = birth_date
     self.state = "authenticated"
     self.signing_date = DateTime.current.to_date
@@ -88,6 +88,16 @@ class Signature < ActiveRecord::Base
 
   def initialize_state
     self.state = "init"
+  end
+
+  def guess_names full_name, last_name, first_names
+    if m = /^\s*#{last_name}\s*/.match(full_name) # known last name is at the beginning
+      first_names = m.post_match
+    elsif m = /\s*#{last_name}\s*$/.match(full_name) # known last name is at the end
+      first_names = m.pre_match
+    end
+    self.first_names = first_names
+    self.last_name = last_name
   end
 
   # TO-DO: Maybe needs a validation is a citizen eligible for voting (i.e. over 18 years old)

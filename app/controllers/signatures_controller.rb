@@ -38,9 +38,8 @@ class SignaturesController < ApplicationController
     # TO-DO: Impelement checks for valid_returning?. Maybe it should be moved out of this class.
 
     birth_date = hetu_to_birth_date(params["B02K_CUSTID"])
-    first_names, last_name = guess_names(params["B02K_CUSTNAME"], @signature.first_names, @signature.last_name)
 
-    @signature.authenticate first_names, last_name, birth_date
+    @signature.authenticate params["B02K_CUSTNAME"], birth_date
 
     Rails.logger.info "All success, authentication ok, storing into session"
     session["authenticated_at"]         = DateTime.now

@@ -90,28 +90,27 @@ describe Signature do
   describe "authenticate" do
     before do
       @birth_date = 20.years.ago
-      @first_names = "John Herman"
-      @last_name = "Doe"
-      @signature = FactoryGirl.create :signature
+      @full_name = "Doe John Herman"
+      @signature = FactoryGirl.create :signature, last_name: "Doe", first_names: "John"
     end
 
     it "sets state to authenticated" do
-      @signature.authenticate @first_names, @last_name, @birth_date
+      @signature.authenticate @full_name, @birth_date
       @signature.state.should == "authenticated"
     end
 
     it "set signing_date to today" do
-      @signature.authenticate @first_names, @last_name, @birth_date
+      @signature.authenticate @full_name, @birth_date
       @signature.signing_date.should == DateTime.current.to_date
     end
 
     it "raises an error if validation fails" do
-      lambda { @signature.authenticate @first_names, @last_name, nil }.should raise_error ActiveRecord::RecordInvalid
+      lambda { @signature.authenticate @full_name, nil }.should raise_error ActiveRecord::RecordInvalid
     end
 
     it "expires the Signature if it is created at more than 20 minutes ago" do
       signature = FactoryGirl.create :signature, created_at: DateTime.current.advance(minutes: -21)
-      lambda { signature.authenticate @first_names, @last_name, @birth_date }.should raise_error SignatureExpired
+      lambda { signature.authenticate @full_name, @birth_date }.should raise_error SignatureExpired
       signature.state.should == "expired"
     end
 
@@ -120,7 +119,15 @@ describe Signature do
       @signature.state = "authenticated"
       @signature.save validate: false
 
-      lambda { @signature.authenticate @first_names, @last_name, @birth_date }.should raise_error InvalidSignatureState
+      lambda { @signature.authenticate @full_name, @birth_date }.should raise_error InvalidSignatureState
+    end
+    
+    describe "with previously set last name" do
+      it "extracts names from full name" do
+        @signature.authenticate @full_name, @birth_date
+        @signature.first_names.should == "John Herman"
+        @signature.last_name.should == "Doe"
+      end
     end
   end
 
