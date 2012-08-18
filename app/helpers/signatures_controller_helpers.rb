@@ -1,25 +1,6 @@
 # encoding: UTF-8
 
 module SignaturesControllerHelpers
-#  def SignaturesControllerHelpers.guess_names(names, firstnames, lastname)
-  def guess_names(names, firstnames, lastname)
-    # let's make sure lastname is just characters before interpolating it into regexp
-    unless just_name_characters(lastname)
-      Rails.logger.error "Lastname #{lastname.to_s} is not just characters"
-    else
-      if m = /^\s*#{lastname}\s*/.match(names)          # known lastname is at the beginning
-        firstnames = m.post_match
-      elsif m = /\s*#{lastname}\s*$/.match(names)       # known lastname is at the end
-        firstnames = m.pre_match
-      end
-    end
-    return firstnames, lastname
-  end
-
-  def just_name_characters(name)
-    name =~ /^[\wäÄöÖåÅ \-]+$/
-  end
-
   def hetu_like(hetu)
     hetu =~ /^\d{6}[\-+A]\d{3}[A-Z\d]$/
   end
