@@ -22,6 +22,22 @@ describe Signature do
       it { should validate_numericality_of(:idea_id).only_integer }
       it { should validate_presence_of(:idea_title) }
 
+      describe "first_names" do
+        it "cannot contain numbers" do
+          s = Signature.new first_names: "John1"
+          s.valid?
+          s.errors.include?(:first_names).should be_true
+        end
+      end
+
+      describe "last_name" do
+        it "cannot contain numbers" do
+          s = Signature.new last_name: "Doe1"
+          s.valid?
+          s.errors.include?(:last_name).should be_true
+        end
+      end
+
       describe "accept_publicity" do
         it "should only allow valid values" do
           Signature::VALID_ACCEPT_PUBLICITY_VALUES.each do |s|

@@ -24,6 +24,8 @@ class Signature < ActiveRecord::Base
   validates :last_name, presence: true, if: "names_required?"
   validates :birth_date, presence: true, if: "authenticated?"
 
+  validate :name_cannot_contain_numbers
+
   before_create :generate_stamp
   before_create :initialize_state
 
@@ -73,6 +75,15 @@ class Signature < ActiveRecord::Base
 
   def names_required?
     %w(authenticated signed).include? self.state
+  end
+
+  def name_cannot_contain_numbers
+    errors.add(:first_names, :cannot_contain_numbers) if has_numbers? self.first_names
+    errors.add(:last_name, :cannot_contain_numbers) if has_numbers? self.last_name
+  end
+
+  def has_numbers? name
+    name =~ /\d/
   end
 
   def expire
