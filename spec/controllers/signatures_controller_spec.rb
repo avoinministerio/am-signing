@@ -14,6 +14,8 @@ describe SignaturesController do
         idea_title: "a title",
         idea_date: "2012-06-21",
         citizen_id: @citizen_id,
+        first_names: "John",
+        last_name: "Doe",
         accept_publicity: "normal",
         accept_science: true,
         accept_non_eu_server: true,
