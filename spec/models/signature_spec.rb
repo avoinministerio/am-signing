@@ -21,6 +21,7 @@ describe Signature do
       it { should validate_numericality_of(:citizen_id).only_integer }
       it { should validate_numericality_of(:idea_id).only_integer }
       it { should validate_presence_of(:idea_title) }
+      it { should validate_presence_of(:idea_mac) }
 
       describe "first_names" do
         it "cannot contain numbers" do

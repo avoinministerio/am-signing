@@ -17,7 +17,8 @@ describe SignaturesController do
         accept_publicity: "normal",
         accept_science: true,
         accept_non_eu_server: true,
-        accept_general: true
+        accept_general: true,
+        idea_mac: "hash"
       }
       options = {
         success_url: @am_success_url,
