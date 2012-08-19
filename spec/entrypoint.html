@@ -1,15 +1,20 @@
 <form method="POST" action="http://0.0.0.0:3333/signatures">
-  <input type="text" name="success_url" value="http://0.0.0.0:3000/ideas/success">
-  <input type="text" name="message[idea_id]" value="2">
-  <input type="text" name="message[citizen_id]" value="12">
-  <input type="text" name="message[idea_title]" value="A Title">
-  <input type="text" name="message[idea_date]" value="2012-06-12">
-  <input type="text" name="message[idea_mac]" value="justahash">
+  <input type="text" name="message[idea_id]" value="5">
+  <input type="text" name="message[idea_title]" value="a title">
+  <input type="text" name="message[idea_date]" value="2012-06-21">
+  <input type="text" name="message[citizen_id]" value="6">
   <input type="text" name="message[first_names]" value="John">
-  <input type="text" name="message[last_name]" value="Doe">
+  <input type="text" name="message[last_name]" value="Doe">  
+  <input type="checkbox" name="message[accept_publicity]" value="normal" checked="true">
   <input type="checkbox" name="message[accept_science]" value="true" checked="true">
   <input type="checkbox" name="message[accept_non_eu_server]" value="true" checked="true">
   <input type="checkbox" name="message[accept_general]" value="true" checked="true">
-  <input type="checkbox" name="message[accept_publicity]" value="normal" checked="true">
+  <input type="text" name="message[idea_mac]" value="hash">
+
+  <input type="text" name="options[success_url]" value="http://foo.bar">
+  <input type="text" name="options[failure_url]" value="http://foo.bar/fail">
+  <input type="text" name="options[service]" value="Alandsbanken testi">
+
+  <input type="text" name="hmac" value="53da59786d5d8bb0eaaac34ff8610ef08ae2ada5ff09422ba186fa8fb755c55d">
   <input type="submit" value="send"></input>
 </form>
