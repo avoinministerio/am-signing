@@ -10,6 +10,6 @@ FactoryGirl.define do
     accept_general true
     accept_non_eu_server true
     accept_science true
-    accept_publicity "normal"
+    accept_publicity "Normal"
   end
 end

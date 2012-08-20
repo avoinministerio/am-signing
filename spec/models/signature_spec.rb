@@ -42,16 +42,16 @@ describe Signature do
       end
 
       describe "when in authenticated state" do
-        it "doesn't allow empty first_names" do
+        it "allow empty first_names" do
           s = Signature.new
           s.state = "authenticated"
-          s.should validate_presence_of(:first_names)
+          s.should_not validate_presence_of(:first_names)
         end
 
-        it "doesn't allow empty last_name" do
+        it "allow empty last_name" do
           s = Signature.new
           s.state = "authenticated"
-          s.should validate_presence_of(:last_name)
+          s.should_not validate_presence_of(:last_name)
         end
       end
 
