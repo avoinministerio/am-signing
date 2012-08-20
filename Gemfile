@@ -7,6 +7,7 @@ gem "haml-rails", ">= 0.3.4", :group => :development
 gem "rails-i18n"
 gem "simple_form"
 gem "twitter-bootstrap-rails"
+gem "unicorn"
 
 group :assets do
   gem "sass-rails"
