@@ -7,7 +7,7 @@ module Signing
     end
 
     def sign_array key, array
-      sign key, array.join("&")
+      sign key, array.join("&") + "&"
     end
 
     module_function :sign, :sign_array
