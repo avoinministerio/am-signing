@@ -72,7 +72,7 @@ class Signature < ActiveRecord::Base
   private
 
   def names_required?
-    %w(authenticated signed).include? self.state
+    %w(signed).include? self.state
   end
 
   def expire
