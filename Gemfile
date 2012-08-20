@@ -1,7 +1,6 @@
 source 'https://rubygems.org'
 
 gem 'rails', '3.2.7'
-gem 'sqlite3'
 gem 'jquery-rails'
 gem "haml", ">= 3.1.6"
 gem "haml-rails", ">= 0.3.4", :group => :development
@@ -18,11 +17,17 @@ end
 
 group :development do
   gem "guard-rspec"
-  gem "guard-spork" 
+  gem "guard-spork"
+  gem 'sqlite3'
 end
 
 group :test, :development do
   gem "factory_girl_rails"
   gem "rspec-rails", "~> 2.0"
   gem "shoulda-matchers"
+  gem 'sqlite3'
+end
+
+group :production do
+  gem "pg"
 end
