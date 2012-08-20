@@ -1,3 +1,4 @@
+
 #encoding: UTF-8
 
 require 'signatures_controller_helpers'
@@ -14,14 +15,37 @@ class SignaturesController < ApplicationController
 
   # Start signing an idea
   def begin_authenticating
-    validate_hmac!
+    validate_requestor!
 
     @service = find_service params[:options][:service]
 
     # ERROR: Check that user has not signed already
     # TODO FIXME: check if user don't have any in-progress signatures
     # ie. cover case when user does not type in the url (when Sign button is not shown)
-    @signature = Signature.create! params[:message]
+
+    create_params = params[:message].dup
+=begin
+    # rename few parameters
+    rename_fields = {
+      last_fill_first_names:        :first_names,
+      last_fill_last_names:         :last_name,
+      last_fill_occupancy_county:   :occupancy_county,
+      last_fill_birthdate:          :birth_date,
+      current_citizen_id:           :citizen_id,
+    }.each do |old_field_name, new_field_name|
+      create_params[new_field_name] = create_params.delete old_field_name
+    end
+
+    delete_fields = [
+      :service, :current_citizen_id, :requestor_identifying_mac, 
+      :signing_failure, :signing_success, :valid_shortcut_session_mac, 
+      :controller, :action
+    ].each do |old_field_name|
+      create_params.delete old_field_name
+    end
+=end
+
+    @signature = Signature.create! create_params
     
     set_signature_specific_values @signature, @service
     set_mac @service
@@ -93,7 +117,7 @@ class SignaturesController < ApplicationController
         url:        "https://online.alandsbanken.fi/ebank/auth/initLogin.do",
       },
       { vers:       "0002",
-        rcvid:      "KANNATUSTUPAS12",
+        rcvid:      "TAPTUPASID",
         idtype:     "02",
         name:       "Tapiola testi",
         url:        "https://pankki.tapiola.fi/service/identify",
@@ -154,7 +178,7 @@ class SignaturesController < ApplicationController
     secret = ENV[secret_key] || ""
 
     # TODO: precalc the secret into environment variable, and remove this special handling
-    if service_name == "Alandsbanken" or service_name == "Tapiola"
+    if service_name =~ /^Alandsbanken/ or service_name == "Tapiola"
       secret = secret_to_mac_string(secret)
       Rails.logger.info "Converting secret to #{secret}"
     end
@@ -167,6 +191,23 @@ class SignaturesController < ApplicationController
     secret
   end
 
+  def requestor_params_as_string(parameters)
+    mapped_params = 
+      [:idea_id, :idea_title, :idea_date, :idea_mac, 
+       :current_citizen_id, 
+       :accept_general, :accept_non_eu_server, :accept_publicity, :accept_science,
+      ].map {|key| [key, parameters[:message][key]]} +
+      [:service, :signing_success, :signing_failure].map {|key| [key, parameters[:options][key]]} +
+      [:last_fill_first_names, :last_fill_last_names, :last_fill_birthdate, :last_fill_occupancy_county, 
+       :valid_shortcut_session_mac].map {|key| [key, parameters[key]]}
+    param_string = mapped_params.map{|key, value|  key.to_s + "=" + value.to_s }.join("&")
+  end
+
+  def validate_requestor!
+    param_string = requestor_params_as_string(params) + "&requestor_secret=#{ENV['requestor_secret']}"
+    raise InvalidMac.new unless params[:requestor_identifying_mac] == mac(param_string)
+  end
+
   def validate_hmac!
     key = ENV["hmac_key"]
     calculated_hmac = Signing::HmacSha256.sign_array key, params[:message].merge(params[:options]).values
@@ -176,6 +217,7 @@ class SignaturesController < ApplicationController
   def secret_to_mac_string(secret)
     str = ""
     secret.split(//).each_slice(2){|a| str += a.join("").hex.chr}
+    p str
     str
   end
 

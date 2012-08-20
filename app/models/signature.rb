@@ -2,7 +2,7 @@ class Signature < ActiveRecord::Base
   extend SignaturesHelper
 
   VALID_STATES = %w(init returned cancelled rejected authenticated expired signed)
-  VALID_ACCEPT_PUBLICITY_VALUES = %w(immediately normal)
+  VALID_ACCEPT_PUBLICITY_VALUES = %w(Immediately Normal)
   TIME_LIMIT_IN_MINUTES = 20
 
   attr_accessible :first_names, :last_name, :birth_date, :occupancy_county, :vow,
