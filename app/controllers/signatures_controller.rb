@@ -53,6 +53,7 @@ class SignaturesController < ApplicationController
     session[:current_citizen_id] = @signature.citizen_id
     session[:am_success_url] = params[:options][:success_url]
     session[:am_failure_url] = params[:options][:failure_url]
+    p session
 
     render
   end
@@ -81,7 +82,15 @@ class SignaturesController < ApplicationController
     if @signature.sign params["signature"]["first_names"], params["signature"]["last_name"],
       params["signature"]["occupancy_county"], params["signature"]["vow"]
       # TO-DO: create Service Identifying MAC
-      redirect_to(session[:am_success_url])
+      other_params = {
+        first_names:          @signature.first_names,
+        last_name:            @signature.last_name,
+        occupancy_county:     @signature.occupancy_county,
+        # TODO?: birth_date ??
+      }
+      url = session[:am_success_url] + "?" + other_params.to_param
+      service_provider_mac = mac(url + "&requestor_secret=#{ENV['requestor_secret']}")
+      redirect_to(url + "&service_provider_identifying_mac=#{service_provider_mac}")
     else
       render "returning"
     end
