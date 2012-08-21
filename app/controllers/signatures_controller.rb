@@ -88,7 +88,9 @@ class SignaturesController < ApplicationController
         occupancy_county:     @signature.occupancy_county,
         # TODO?: birth_date ??
       }
-      url = session[:am_success_url] + "?" + other_params.to_param
+      url = session[:am_success_url] + "?" + other_params.map {|name, value| h={}; h[name]=value; h.to_param}.join("&")
+      puts(url + "&requestor_secret=#{ENV['requestor_secret']}")
+      puts(mac(url + "&requestor_secret=#{ENV['requestor_secret']}"))
       service_provider_mac = mac(url + "&requestor_secret=#{ENV['requestor_secret']}")
       redirect_to(url + "&service_provider_identifying_mac=#{service_provider_mac}")
     else
