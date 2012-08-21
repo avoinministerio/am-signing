@@ -214,7 +214,9 @@ class SignaturesController < ApplicationController
 
   def validate_requestor!
     param_string = requestor_params_as_string(params) + "&requestor_secret=#{ENV['requestor_secret']}"
-    raise InvalidMac.new unless params[:requestor_identifying_mac] == mac(param_string)
+    unless params[:requestor_identifying_mac] == mac(param_string)
+      raise InvalidMac.new(params.dup, param_string, mac(param_string), ENV['requestor_secret'])
+    end
   end
 
   def validate_hmac!
@@ -254,9 +256,9 @@ class SignaturesController < ApplicationController
     hetu[6,1] == "+" ? 1800 : hetu[6,1] == "A" ? 2000 : 1900
   end
 
-  def invalid_mac
+  def invalid_mac(invalid_mac_exception)
     Rails.logger.info "Invalid MAC for Signature message"
-    render :text => "403 Invalid MAC", :status => 403
+    render :text => "403 Invalid MAC #{invalid_mac_exception}", :status => 403
   end
 
   def record_not_found
