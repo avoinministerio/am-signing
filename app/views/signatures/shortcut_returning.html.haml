@@ -1,0 +1,5 @@
+.returning
+  %h1 Vanha tunnistus edelleen voimassa
+
+  =simple_form_for @signature, url: url_for(id: @signature.id, action: "finalize_signing", controller: "signatures") do |f|
+    = render :partial => "initiative_form", :locals => {:f => f}
