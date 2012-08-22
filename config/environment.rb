@@ -7,3 +7,6 @@ api_tokens.each{ |key, val| ENV[key] = val }
 
 # Initialize the rails application
 Signing::Application.initialize!
+
+Encoding.default_external = Encoding::UTF_8
+Encoding.default_internal = Encoding::UTF_8
