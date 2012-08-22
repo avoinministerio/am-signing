@@ -13,47 +13,48 @@ class SignaturesController < ApplicationController
 
   respond_to :html
 
+  def parse_datetime(str)
+    if str =~ /\d\d\d\d-\d\d-\d\d/
+      begin 
+        DateTime.parse(str)
+      rescue
+        nil
+      end
+    else 
+      nil
+    end
+  end
+
   # Start signing an idea
   def begin_authenticating
     validate_requestor!
-
-    @service = find_service params[:options][:service]
 
     # ERROR: Check that user has not signed already
     # TODO FIXME: check if user don't have any in-progress signatures
     # ie. cover case when user does not type in the url (when Sign button is not shown)
 
-    create_params = params[:message].dup
-=begin
-    # rename few parameters
-    rename_fields = {
-      last_fill_first_names:        :first_names,
-      last_fill_last_names:         :last_name,
-      last_fill_occupancy_county:   :occupancy_county,
-      last_fill_birthdate:          :birth_date,
-      current_citizen_id:           :citizen_id,
-    }.each do |old_field_name, new_field_name|
-      create_params[new_field_name] = create_params.delete old_field_name
-    end
-
-    delete_fields = [
-      :service, :current_citizen_id, :requestor_identifying_mac, 
-      :signing_failure, :signing_success, :valid_shortcut_session_mac, 
-      :controller, :action
-    ].each do |old_field_name|
-      create_params.delete old_field_name
-    end
-=end
-
-    @signature = Signature.create! create_params
-    
-    set_signature_specific_values @signature, @service
-    set_mac @service
-
+    @signature = Signature.create! params[:message]
     session[:current_citizen_id] = @signature.citizen_id
     session[:am_success_url] = params[:options][:success_url]
     session[:am_failure_url] = params[:options][:failure_url]
-    p session
+    
+    birth_date, authenticated_at, authentication_token = params[:last_fill_birth_date], params[:authenticated_at], params[:authentication_token]
+    if( birth_date and parse_datetime(birth_date) and 
+        authenticated_at and parse_datetime(authenticated_at) and 
+        authentication_token and authentication_token =~ /^[0-9A-F]+$/)
+      mins = 1.0/24/60
+      authentication_valid = 2 * mins
+      auth_token = authentication_token(birth_date, authenticated_at)
+      valid_authentication_token =  auth_token == authentication_token
+      authentication_recent_enough = (DateTime.now - DateTime.parse(authenticated_at)) < authentication_valid
+      if valid_authentication_token and authentication_recent_enough
+        return shortcut_returning
+      end
+    end
+
+    @service = find_service params[:options][:service]
+    set_signature_specific_values @signature, @service
+    set_mac @service
 
     render
   end
@@ -86,7 +87,9 @@ class SignaturesController < ApplicationController
         first_names:          @signature.first_names,
         last_name:            @signature.last_name,
         occupancy_county:     @signature.occupancy_county,
-        # TODO?: birth_date ??
+        authenticated_at:     session["authenticated_at"],
+        birth_date:           @signature.birth_date,
+        authentication_token: authentication_token(@signature.birth_date, session["authenticated_at"]),
       }
       url = session[:am_success_url] + "?" + other_params.map {|name, value| h={}; h[name]=value; h.to_param}.join("&")
       puts(url + "&requestor_secret=#{ENV['requestor_secret']}")
@@ -98,7 +101,29 @@ class SignaturesController < ApplicationController
     end
   end
 
+  def shortcut_returning
+    @signature.authenticate params["last_fill_first_names"], params["last_fill_last_names"], params["last_fill_birth_date"]
+    @signature.occupancy_county = params["last_fill_occupancy_county"]
+    @signature.save
+
+    Rails.logger.info "Shortcut success, authentication ok, storing into session"
+    session["authenticated_at"]         = DateTime.now
+    session["authenticated_birth_date"] = @signature.birth_date
+    session["authenticated_approvals"]  = @signature.id
+
+    p @signature
+    p @signature.id
+    render "shortcut_returning"
+  end
+
   private
+
+  def authentication_token(birth_date, authenticated_at)
+    authentication_token_secret = ENV['authentication_token_secret'] || ""
+    puts "Calculating authentication token"
+    p birth_date, authenticated_at, authentication_token_secret
+    mac(birth_date.to_s + authenticated_at.to_s + authentication_token_secret)
+  end
 
   # This method should be replaced with TUPAS gem by jaakkos
   def find_service name
@@ -209,7 +234,7 @@ class SignaturesController < ApplicationController
        :accept_general, :accept_non_eu_server, :accept_publicity, :accept_science,
       ].map {|key| [key, parameters[:message][key]]} +
       [:service, :signing_success, :signing_failure].map {|key| [key, parameters[:options][key]]} +
-      [:last_fill_first_names, :last_fill_last_names, :last_fill_birthdate, :last_fill_occupancy_county, 
+      [:last_fill_first_names, :last_fill_last_names, :last_fill_birth_date, :last_fill_occupancy_county, 
        :valid_shortcut_session_mac].map {|key| [key, parameters[key]]}
     param_string = mapped_params.map{|key, value|  key.to_s + "=" + value.to_s }.join("&")
   end
