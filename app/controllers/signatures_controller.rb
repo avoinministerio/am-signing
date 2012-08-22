@@ -189,7 +189,7 @@ class SignaturesController < ApplicationController
   def set_signature_specific_values signature, service
     service[:stamp] = signature.stamp
 
-    server = request.protocol + request.host_with_port
+    server = "http" + (Rails.env == "development" ? "" : "s" ) + "://#{request.host_with_port}"
     Rails.logger.info "Server is #{server}"
 
     service_name = service[:name].gsub(/\s+/, "")
