@@ -34,6 +34,7 @@ class SignaturesController < ApplicationController
     # ie. cover case when user does not type in the url (when Sign button is not shown)
 
     @signature = Signature.create! params[:message]
+
     session[:current_citizen_id] = @signature.citizen_id
     session[:am_success_url] = params[:options][:success_url]
     session[:am_failure_url] = params[:options][:failure_url]
@@ -42,26 +43,50 @@ class SignaturesController < ApplicationController
     if( birth_date and parse_datetime(birth_date) and 
         authenticated_at and parse_datetime(authenticated_at) and 
         authentication_token and authentication_token =~ /^[0-9A-F]+$/)
-      mins = 1.0/24/60
-      authentication_valid = 2 * mins
+
       auth_token = authentication_token(birth_date, authenticated_at)
       valid_authentication_token =  auth_token == authentication_token
-      authentication_recent_enough = (DateTime.now - DateTime.parse(authenticated_at)) < authentication_valid
+
+      authentication_recent_enough = authentication_age(authenticated_at) < minutes(2)
       if valid_authentication_token and authentication_recent_enough
         return shortcut_returning
       end
     end
 
-    @service = find_service params[:options][:service]
+    @service = find_service params[:message][:service]
     set_signature_specific_values @signature, @service
     set_mac @service
 
     render
   end
 
+  def authentication_age(authenticated_at)
+    (DateTime.now - DateTime.parse(authenticated_at))
+  end
+
+  def minutes(mins)
+    mins_of_day = 1.0/24/60
+    mins * mins_of_day
+  end
+
   def returning
     @signature = Signature.find_initial_for_citizen(params[:id], current_citizen_id)
-    # TO-DO: Impelement checks for valid_returning?. Maybe it should be moved out of this class.
+    service_name = params[:servicename]
+
+    if not same_service?(@signature, service_name)
+      Rails.logger.info "Trying to return from wrong service"
+      @signature.state = "error_invalid_service"
+      @signature.save!
+      raise "Invalid service"
+    elsif not valid_returning?(@signature, service_name)
+      Rails.logger.info "Invalid return"
+      @signature.state = "error_invalid_return"
+      @signature.save!
+      raise InvalidMac.new
+    elsif check_previously_signed(current_citizen_id, @signature.idea_id)
+      Rails.logger.info "error_previously_signed"
+      raise "Previously signed"
+    end
 
     birth_date = hetu_to_birth_date(params["B02K_CUSTID"])
     first_names, last_name = guess_names(params["B02K_CUSTNAME"], @signature.first_names, @signature.last_name)
@@ -70,8 +95,6 @@ class SignaturesController < ApplicationController
 
     Rails.logger.info "All success, authentication ok, storing into session"
     session["authenticated_at"]         = DateTime.now
-    session["authenticated_birth_date"] = birth_date
-    session["authenticated_approvals"]  = @signature.id
 
     respond_with @signature
   end
@@ -82,7 +105,6 @@ class SignaturesController < ApplicationController
     # TODO: and duration since last authentication less that threshold. Validation?
     if @signature.sign params["signature"]["first_names"], params["signature"]["last_name"],
       params["signature"]["occupancy_county"], params["signature"]["vow"]
-      # TO-DO: create Service Identifying MAC
       other_params = {
         first_names:          @signature.first_names,
         last_name:            @signature.last_name,
@@ -102,21 +124,51 @@ class SignaturesController < ApplicationController
   end
 
   def shortcut_returning
+    if check_previously_signed(current_citizen_id, @signature.idea_id)
+      Rails.logger.info "error_previously_signed"
+      raise "Previously signed"
+    end
+
     @signature.authenticate params["last_fill_first_names"], params["last_fill_last_names"], params["last_fill_birth_date"]
     @signature.occupancy_county = params["last_fill_occupancy_county"]
     @signature.save
 
     Rails.logger.info "Shortcut success, authentication ok, storing into session"
-    session["authenticated_at"]         = DateTime.now
-    session["authenticated_birth_date"] = @signature.birth_date
-    session["authenticated_approvals"]  = @signature.id
+    session["authenticated_at"]         = params["authenticated_at"]
 
-    p @signature
-    p @signature.id
     render "shortcut_returning"
   end
 
+  def cancelling
+    cancel_or_reject("cancelled")
+  end
+
+  def rejecting
+    cancel_or_reject("rejected")
+  end
+
+
   private
+
+  # TODO: user would benefit from cancel or reject having some MAC check to be sure 
+  # no one is forging the request while person is in the TUPAS service
+  def cancel_or_reject(state_update)
+    @signature = Signature.find_initial_for_citizen(params[:id], current_citizen_id)
+
+    if not @signature.citizen_id == current_citizen_id
+      Rails.logger.info "Trying to return for different user signature"
+      raise "Not current_citizen's signature"
+    # TODO: it would be great to provide the cancelling with proper validating mac to make sure not even user could forge
+    # elsif valid_cancelling?
+    #    raise "Invalid cancelling"
+    end
+
+    @signature.state = state_update
+    @signature.save
+
+    url = session[:am_failure_url]
+    redirect_to(url)
+  end
 
   def authentication_token(birth_date, authenticated_at)
     authentication_token_secret = ENV['authentication_token_secret'] || ""
@@ -192,7 +244,7 @@ class SignaturesController < ApplicationController
     server = "http" + (Rails.env == "development" ? "" : "s" ) + "://#{request.host_with_port}"
     Rails.logger.info "Server is #{server}"
 
-    service_name = service[:name].gsub(/\s+/, "")
+    service_name = service_name_to_param(service[:name])
     service[:retlink] = "#{server}/signatures/#{signature.id}/returning/#{service_name}"
     service[:canlink] = "#{server}/signatures/#{signature.id}/cancelling/#{service_name}"
     service[:rejlink] = "#{server}/signatures/#{signature.id}/rejecting/#{service_name}"
@@ -231,11 +283,12 @@ class SignaturesController < ApplicationController
       [:idea_id, :idea_title, :idea_date, :idea_mac, 
        :citizen_id, 
        :accept_general, :accept_non_eu_server, :accept_publicity, :accept_science,
+       :service
       ].map do |key| 
         raise "unknown param #{key}" unless parameters[:message].has_key? key
         [key, parameters[:message][key]]
       end +
-      [:service, :success_url, :failure_url].map do |key| 
+      [:success_url, :failure_url].map do |key| 
         raise "unknown param #{key}" unless parameters[:options].has_key? key
         [key, parameters[:options][key]]
       end +
@@ -271,10 +324,29 @@ class SignaturesController < ApplicationController
     Digest::SHA256.new.update(string).hexdigest.upcase
   end
 
+  def service_name_to_param(service_name)
+    service_name.gsub(/\s+/, "")
+  end
+
+  def same_service?(signature, service_name)
+    service_name_to_param(signature.service) == service_name
+  end
+
   def valid_returning?(signature, service_name)
     values = %w(VERS TIMESTMP IDNBR STAMP CUSTNAME KEYVERS ALG CUSTID CUSTTYPE).map {|key| params["B02K_" + key]}
     string = values[0,9].join("&") + "&" + service_secret(service_name) + "&"
     params["B02K_MAC"] == mac(string)
+  end
+
+  def check_previously_signed(current_citizen_id, idea_id)
+    return false if ENV["ALLOW_SIGNING_MULTIPLE_TIMES"]
+
+    completed_signature = Signature.where(state: "signed", citizen_id: current_citizen_id, idea_id: idea_id).first
+    if completed_signature
+      true
+    else
+      false
+    end
   end
 
   def hetu_to_birth_date(hetu)
