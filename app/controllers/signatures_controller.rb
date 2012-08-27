@@ -255,6 +255,8 @@ class SignaturesController < ApplicationController
     keys = [:action_id, :vers, :rcvid, :langcode, :stamp, :idtype, :retlink, :canlink, :rejlink, :keyvers, :alg]
     vals = keys.map{|k| service[k] }
     string = vals.join("&") + "&" + secret + "&"
+    puts "Calculating mac for '#{string}'"
+    puts "Mac is              '#{mac(string)}'"
     service[:mac] = mac(string)
   end
 
