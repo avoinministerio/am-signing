@@ -339,6 +339,10 @@ class SignaturesController < ApplicationController
   end
 
   def check_previously_signed(current_citizen_id, idea_id)
+    Rails.logger.info "Here comes all the environment"
+    ENV.each do |key, val|
+      Rails.logger.info "#{key.to_s}=#{val.to_s}"
+    end
     return false if ENV["ALLOW_SIGNING_MULTIPLE_TIMES"]
 
     completed_signature = Signature.where(state: "signed", citizen_id: current_citizen_id, idea_id: idea_id).first
