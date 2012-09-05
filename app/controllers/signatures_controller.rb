@@ -1,4 +1,3 @@
-
 #encoding: UTF-8
 
 require 'signatures_controller_helpers'
@@ -8,30 +7,17 @@ class SignaturesController < ApplicationController
   include SignaturesControllerHelpers
 
   rescue_from ActiveRecord::RecordNotFound, :with => :record_not_found
-  rescue_from SignatureExpired, :with => :signature_expired
-  rescue_from InvalidMac, :with => :invalid_mac
+  rescue_from SignatureExpired,             :with => :signature_expired
+  rescue_from InvalidMac,                   :with => :invalid_mac
 
   respond_to :html
-
-  def parse_datetime(str)
-    if str =~ /\d\d\d\d-\d\d-\d\d/
-      begin 
-        DateTime.parse(str)
-      rescue
-        nil
-      end
-    else 
-      nil
-    end
-  end
 
   # Start signing an idea
   def begin_authenticating
     validate_requestor!
+    validate_begin_authenticating_parameters!
 
-    # ERROR: Check that user has not signed already
-    # TODO FIXME: check if user don't have any in-progress signatures
-    # ie. cover case when user does not type in the url (when Sign button is not shown)
+    # TODO: Could be checked that user has not signed already, but it is not required
 
     @signature = Signature.create! params[:message]
 
@@ -42,15 +28,10 @@ class SignaturesController < ApplicationController
     birth_date, authenticated_at, authentication_token = params[:last_fill_birth_date], params[:authenticated_at], params[:authentication_token]
     if( birth_date and parse_datetime(birth_date) and 
         authenticated_at and parse_datetime(authenticated_at) and 
-        authentication_token and authentication_token =~ /^[0-9A-F]+$/)
-
-      auth_token = authentication_token(birth_date, authenticated_at)
-      valid_authentication_token =  auth_token == authentication_token
-
-      authentication_recent_enough = authentication_age(authenticated_at) < minutes(2)
-      if valid_authentication_token and authentication_recent_enough
-        return shortcut_returning
-      end
+        authentication_token and authentication_token =~ /^[0-9A-F]+$/ and
+        valid_authentication_token?(birth_date, authenticated_at, authentication_token) and 
+        authentication_age(authenticated_at) < minutes(2) )
+      return shortcut_returning
     end
 
     @service = find_service params[:message][:service]
@@ -60,31 +41,23 @@ class SignaturesController < ApplicationController
     render
   end
 
-  def authentication_age(authenticated_at)
-    (DateTime.now - DateTime.parse(authenticated_at))
-  end
-
-  def minutes(mins)
-    mins_of_day = 1.0/24/60
-    mins * mins_of_day
-  end
 
   def returning
     @signature = Signature.find_initial_for_citizen(params[:id], current_citizen_id)
     service_name = params[:servicename]
 
     if not same_service?(@signature, service_name)
-      Rails.logger.info "Trying to return from wrong service"
+      Rails.logger.info "Trying to return from #{service_name} which is wrong service as #{@signature.service} is required"
       @signature.state = "error_invalid_service"
       @signature.save!
       raise "Invalid service"
     elsif not valid_returning?(@signature, service_name)
-      Rails.logger.info "Invalid return"
+      Rails.logger.info "Invalid return from #{service_name} for signature.id=#{@signature.id}"
       @signature.state = "error_invalid_return"
       @signature.save!
       raise InvalidMac.new
     elsif check_previously_signed(current_citizen_id, @signature.idea_id)
-      Rails.logger.info "error_previously_signed"
+      Rails.logger.info "Previously current_citizen_id=#{current_citizen_id} has signed @signature.idea_id=#{@signature.idea_id}"
       raise "Previously signed"
     end
 
@@ -111,11 +84,11 @@ class SignaturesController < ApplicationController
         occupancy_county:     @signature.occupancy_county,
         authenticated_at:     session["authenticated_at"],
         birth_date:           @signature.birth_date,
-        authentication_token: authentication_token(@signature.birth_date, session["authenticated_at"]),
+        authentication_token: calculate_authentication_token(@signature.birth_date, session["authenticated_at"]),
       }
       url = session[:am_success_url] + "?" + other_params.map {|name, value| h={}; h[name]=value; h.to_param}.join("&")
-      puts(url + "&requestor_secret=#{ENV['requestor_secret']}")
-      puts(mac(url + "&requestor_secret=#{ENV['requestor_secret']}"))
+      Rails.logger.info(url + "&requestor_secret=#{ENV['requestor_secret']}")
+      Rails.logger.info(mac(url + "&requestor_secret=#{ENV['requestor_secret']}"))
       service_provider_mac = mac(url + "&requestor_secret=#{ENV['requestor_secret']}")
       redirect_to(url + "&service_provider_identifying_mac=#{service_provider_mac}")
     else
@@ -170,10 +143,14 @@ class SignaturesController < ApplicationController
     redirect_to(url)
   end
 
-  def authentication_token(birth_date, authenticated_at)
+  def valid_authentication_token?(birth_date, authenticated_at, authentication_token)
+    authentication_token == calculate_authentication_token(birth_date, authenticated_at)
+  end
+
+  def calculate_authentication_token(birth_date, authenticated_at)
     authentication_token_secret = ENV['authentication_token_secret'] || ""
-    puts "Calculating authentication token"
-    p birth_date, authenticated_at, authentication_token_secret
+    Rails.logger.info("Calculating authentication token")
+    Rails.logger.info([birth_date, authenticated_at, authentication_token_secret].inspect)
     mac(birth_date.to_s + authenticated_at.to_s + authentication_token_secret)
   end
 
@@ -255,8 +232,8 @@ class SignaturesController < ApplicationController
     keys = [:action_id, :vers, :rcvid, :langcode, :stamp, :idtype, :retlink, :canlink, :rejlink, :keyvers, :alg]
     vals = keys.map{|k| service[k] }
     string = vals.join("&") + "&" + secret + "&"
-    puts "Calculating mac for '#{string}'"
-    puts "Mac is              '#{mac(string)}'"
+    Rails.logger.info  "Calculating mac for '#{string}'"
+    Rails.logger.info  "Mac is              '#{mac(string)}'"
     service[:mac] = mac(string)
   end
 
@@ -278,6 +255,20 @@ class SignaturesController < ApplicationController
     end
 
     secret
+  end
+
+  def secret_to_mac_string(secret)
+    str = ""
+    secret.split(//).each_slice(2){|a| str += a.join("").hex.chr}
+    Rails.logger.info(str.inspect)
+    str
+  end
+
+  def validate_requestor!
+    param_string = requestor_params_as_string(params) + "&requestor_secret=#{ENV['requestor_secret']}"
+    unless params[:requestor_identifying_mac] == mac(param_string)
+      raise InvalidMac.new(params.dup, param_string, mac(param_string), ENV['requestor_secret'])
+    end
   end
 
   def requestor_params_as_string(parameters)
@@ -302,36 +293,55 @@ class SignaturesController < ApplicationController
     param_string = mapped_params.map{|key, value| h={}; h[key] = value; h.to_param }.join("&")
   end
 
-  def validate_requestor!
-    param_string = requestor_params_as_string(params) + "&requestor_secret=#{ENV['requestor_secret']}"
-    unless params[:requestor_identifying_mac] == mac(param_string)
-      raise InvalidMac.new(params.dup, param_string, mac(param_string), ENV['requestor_secret'])
-    end
+  def validate_begin_authenticating_parameters!
+    [ [ params[:message], [
+        [:idea_id,                      /^\d+$/ ],
+        [:idea_title,                   /^[[[:alnum:]][[:punct:]]\.€\/:\(\),\-"!\+\?\=%' ]+$/  ],   # would [[:word:]] be better?
+        [:idea_date,                    /^\d\d\d\d-\d\d-\d\d[T ]\d\d:\d\d:\d\d ?[+\-]\d\d:?\d\d$/ ],
+        [:idea_mac,                     /^\h+$/ ],
+        [:citizen_id,                   /^\d+$/ ],
+        [:accept_general,               /^(true|false)$/ ],
+        [:accept_non_eu_server,         /^(true|false)$/ ],
+        [:accept_publicity,             /^(Normal|Immediately)$/ ],
+        [:accept_science,               /^(true|false)$/ ],
+        [:service,                      /^[\w ]+$/ ],
+      ] ],
+      [ params[:options], [
+        [:success_url,                  /^[\w\/\:\?\=\&]+$/ ],
+        [:failure_url,                  /^[\w\/\:\?\=\&]+$/ ],
+      ] ],
+      [ params, [
+        [:last_fill_first_names,        /^[[:alpha]\s]*$/ ],
+        [:last_fill_last_names,         /^[[:alpha]\s]*$/ ],
+        [:last_fill_birth_date,         /^(\d\d\d\d-\d\d-\d\d)?$/ ],
+        [:last_fill_occupancy_county,   /^[[:alpha]\s]*$/ ],
+        [:authentication_token,         /^\h*$/ ],
+        [:authenticated_at,             /^(\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d[+\-]\d\d:\d\d)?$/ ],
+      ] ], 
+    ].map { |parameters, param_spec| validate_params(parameters, param_spec) }.all? or raise "Invalid parameters"
   end
 
-  def validate_hmac!
-    key = ENV["hmac_key"]
-    calculated_hmac = Signing::HmacSha256.sign_array key, params[:message].merge(params[:options]).values
-    raise InvalidMac.new unless calculated_hmac == params[:hmac]
+  # used to validate hashes of parameters
+  def validate_params(parameters, param_spec)
+    param_spec.map {|param_key, regexp| validate_param(parameters, param_key, regexp) }.all?
   end
 
-  def secret_to_mac_string(secret)
-    str = ""
-    secret.split(//).each_slice(2){|a| str += a.join("").hex.chr}
-    p str
-    str
+  def validate_param(parameters, param_key, regexp)
+    p parameters[param_key]
+    p regexp.match(parameters[param_key])
+    regexp.match(parameters[param_key]) or (Rails.logger.info "Failed parameter value for #{param_key}: '#{parameters[param_key]}'" and false)
   end
 
   def mac(string)
     Digest::SHA256.new.update(string).hexdigest.upcase
   end
 
-  def service_name_to_param(service_name)
-    service_name.gsub(/\s+/, "")
-  end
-
   def same_service?(signature, service_name)
     service_name_to_param(signature.service) == service_name
+  end
+
+  def service_name_to_param(service_name)
+    service_name.gsub(/\s+/, "")
   end
 
   def valid_returning?(signature, service_name)
@@ -341,10 +351,6 @@ class SignaturesController < ApplicationController
   end
 
   def check_previously_signed(current_citizen_id, idea_id)
-    Rails.logger.info "Here comes all the environment"
-    ENV.each do |key, val|
-      Rails.logger.info "#{key.to_s}=#{val.to_s}"
-    end
     return false if ENV["ALLOW_SIGNING_MULTIPLE_TIMES"]
 
     completed_signature = Signature.where(state: "signed", citizen_id: current_citizen_id, idea_id: idea_id).first
@@ -386,4 +392,26 @@ class SignaturesController < ApplicationController
   def current_citizen_id
     session[:current_citizen_id]
   end
+
+  def parse_datetime(str)
+    if str =~ /\d\d\d\d-\d\d-\d\d/
+      begin 
+        DateTime.parse(str)
+      rescue
+        nil
+      end
+    else 
+      nil
+    end
+  end
+
+  def authentication_age(authenticated_at)
+    (DateTime.now - DateTime.parse(authenticated_at))
+  end
+
+  def minutes(mins)
+    mins_of_day = 1.0/24/60
+    mins * mins_of_day
+  end
+
 end
