@@ -6,4 +6,6 @@ Signing::Application.routes.draw do
   match "/signatures/:id/returning/:servicename"  => "signatures#returning",            via: :get
   match "/signatures/:id/cancelling/:servicename" => "signatures#cancelling",           via: :get
   match "/signatures/:id/rejecting/:servicename"  => "signatures#rejecting",            via: :get
+
+  match "/heartbeat"                              => "heartbeats#index",                via: :get
 end
