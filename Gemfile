@@ -8,6 +8,7 @@ gem "rails-i18n"
 gem "simple_form"
 gem "twitter-bootstrap-rails"
 gem "unicorn"
+gem "httparty"
 
 group :assets do
   gem "sass-rails"

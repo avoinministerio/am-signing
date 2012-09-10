@@ -21,9 +21,9 @@ class SignaturesController < ApplicationController
 
     @signature = Signature.create! params[:message]
 
-    session[:current_citizen_id] = @signature.citizen_id
-    session[:am_success_url] = params[:options][:success_url]
-    session[:am_failure_url] = params[:options][:failure_url]
+    session[:current_citizen_id]    = @signature.citizen_id
+    session[:am_success_url]        = params[:options][:success_url]
+    session[:am_failure_url]        = params[:options][:failure_url]
     
     birth_date, authenticated_at, authentication_token = params[:last_fill_birth_date], params[:authenticated_at], params[:authentication_token]
     if( birth_date and parse_datetime(birth_date) and 
@@ -32,6 +32,12 @@ class SignaturesController < ApplicationController
         valid_authentication_token?(birth_date, authenticated_at, authentication_token) and 
         authentication_age(authenticated_at) < minutes(2) )
       return shortcut_returning
+    end
+
+    if not tupas_services.find {|ts| ts[:name] == params[:message][:service]}
+      # call with incorrect service yields failure
+      # this is intentional as service is omitted in case of previous authentication still valid
+      redirect_to(session[:am_failure_url])
     end
 
     @service = find_service params[:message][:service]
@@ -56,7 +62,12 @@ class SignaturesController < ApplicationController
       @signature.state = "error_invalid_return"
       @signature.save!
       raise InvalidMac.new
-    elsif check_previously_signed(current_citizen_id, @signature.idea_id)
+    end
+
+    # this is the point where cost incurred, thus we need to make sure the main app will do the deduction
+    signal_successful_authentication
+
+    if check_previously_signed(current_citizen_id, @signature.idea_id)
       Rails.logger.info "Previously current_citizen_id=#{current_citizen_id} has signed @signature.idea_id=#{@signature.idea_id}"
       raise "Previously signed"
     end
@@ -154,8 +165,7 @@ class SignaturesController < ApplicationController
     mac(birth_date.to_s + authenticated_at.to_s + authentication_token_secret)
   end
 
-  # This method should be replaced with TUPAS gem by jaakkos
-  def find_service name
+  def tupas_services
     services = [
       { vers:       "0001",
         rcvid:      "Elisa testi",
@@ -200,8 +210,11 @@ class SignaturesController < ApplicationController
         url:        "https://verkkopankki.sampopankki.fi/SP/tupaha/TupahaApp",
       }
     ]
+  end
 
-    service = services.find { |s| s[:name] == name }
+  # This method should be replaced with TUPAS gem by jaakkos
+  def find_service name
+    service = tupas_services.find { |s| s[:name] == name }
     raise ArgumentError.new("Service not found with name \"#{name}\"") unless service != nil
     
     set_defaults service
@@ -276,7 +289,7 @@ class SignaturesController < ApplicationController
       [:idea_id, :idea_title, :idea_date, :idea_mac, 
        :citizen_id, 
        :accept_general, :accept_non_eu_server, :accept_publicity, :accept_science,
-       :service
+       :service, :success_auth_url
       ].map do |key| 
         raise "unknown param #{key}" unless parameters[:message].has_key? key
         [key, parameters[:message][key]]
@@ -305,16 +318,17 @@ class SignaturesController < ApplicationController
         [:accept_publicity,             /^(Normal|Immediately)$/ ],
         [:accept_science,               /^(true|false)$/ ],
         [:service,                      /^[\w ]+$/ ],
+        [:success_auth_url,             /^[\w\/\:\?\=\&]+$/ ],
       ] ],
       [ params[:options], [
         [:success_url,                  /^[\w\/\:\?\=\&]+$/ ],
         [:failure_url,                  /^[\w\/\:\?\=\&]+$/ ],
       ] ],
       [ params, [
-        [:last_fill_first_names,        /^[[:alpha]\s]*$/ ],
-        [:last_fill_last_names,         /^[[:alpha]\s]*$/ ],
+        [:last_fill_first_names,        /^[[:alpha:]\s]*$/ ],
+        [:last_fill_last_names,         /^[[:alpha:]\s]*$/ ],
         [:last_fill_birth_date,         /^(\d\d\d\d-\d\d-\d\d)?$/ ],
-        [:last_fill_occupancy_county,   /^[[:alpha]\s]*$/ ],
+        [:last_fill_occupancy_county,   /^[[:alpha:]\s]*$/ ],
         [:authentication_token,         /^\h*$/ ],
         [:authenticated_at,             /^(\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d[+\-]\d\d:\d\d)?$/ ],
       ] ], 
@@ -348,6 +362,26 @@ class SignaturesController < ApplicationController
     values = %w(VERS TIMESTMP IDNBR STAMP CUSTNAME KEYVERS ALG CUSTID CUSTTYPE).map {|key| params["B02K_" + key]}
     string = values[0,9].join("&") + "&" + service_secret(service_name) + "&"
     params["B02K_MAC"] == mac(string)
+  end
+
+  def signal_successful_authentication
+    retries, max_retries = 0, 3
+    begin
+      response = HTTParty.get(@signature.success_auth_url, timeout: 7.0)
+      if response.code == 200
+        Rails.logger.info "Successful signal_successful_authentication for signature.id=#{@signature.id} signature.user=#{@signature.citizen_id} signature.stamp=#{@signature.stamp}"
+      else
+        Rails.logger.error "Failed after connection, could not signal_successful_authentication with url #{@signature.success_auth_url} for signature.id=#{@signature.id} signature.user=#{@signature.citizen_id} signature.stamp=#{@signature.stamp} and response.code=#{response.code}"
+      end
+    rescue StandardError => e  # Timeout::Error => e    # originally only Timeout errors but actually all errors should yield the same (like DNS down)
+      if (retries += 1) >= max_retries
+        Rails.logger.error "Failed at trying due to #{e}, could not signal_successful_authentication with url #{@signature.success_auth_url} for signature.id=#{@signature.id} signature.user=#{@signature.citizen_id} signature.stamp=#{@signature.stamp}"
+        # give up
+        return 
+      else
+        retry
+      end
+    end
   end
 
   def check_previously_signed(current_citizen_id, idea_id)
@@ -413,5 +447,6 @@ class SignaturesController < ApplicationController
     mins_of_day = 1.0/24/60
     mins * mins_of_day
   end
+
 
 end
