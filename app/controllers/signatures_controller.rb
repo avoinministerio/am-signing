@@ -307,8 +307,9 @@ class SignaturesController < ApplicationController
         [:service,                      /^[\w ]+$/ ],
       ] ],
       [ params[:options], [
-        [:success_url,                  /^[\w\/\:\?\=\&]+$/ ],
-        [:failure_url,                  /^[\w\/\:\?\=\&]+$/ ],
+        # Review: strict URL validation is very difficult
+        #[:success_url,                  /^[\w\/\:\?\=\&]+$/ ],
+        #[:failure_url,                  /^[\w\/\:\?\=\&]+$/ ],
       ] ],
       [ params, [
         [:last_fill_first_names,        /^[[:alpha:]\s]*$/ ],
