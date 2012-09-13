@@ -328,8 +328,6 @@ class SignaturesController < ApplicationController
   end
 
   def validate_param(parameters, param_key, regexp)
-    p parameters[param_key]
-    p regexp.match(parameters[param_key])
     regexp.match(parameters[param_key]) or (Rails.logger.info "Failed parameter value for #{param_key}: '#{parameters[param_key]}'" and false)
   end
 
