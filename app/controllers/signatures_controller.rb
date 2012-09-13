@@ -311,10 +311,10 @@ class SignaturesController < ApplicationController
         [:failure_url,                  /^[\w\/\:\?\=\&]+$/ ],
       ] ],
       [ params, [
-        [:last_fill_first_names,        /^[[:alpha]\s]*$/ ],
-        [:last_fill_last_names,         /^[[:alpha]\s]*$/ ],
+        [:last_fill_first_names,        /^[[:alpha:]\s]*$/ ],
+        [:last_fill_last_names,         /^[[:alpha:]\s]*$/ ],
         [:last_fill_birth_date,         /^(\d\d\d\d-\d\d-\d\d)?$/ ],
-        [:last_fill_occupancy_county,   /^[[:alpha]\s]*$/ ],
+        [:last_fill_occupancy_county,   /^[[:alpha:]\s]*$/ ],
         [:authentication_token,         /^\h*$/ ],
         [:authenticated_at,             /^(\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d[+\-]\d\d:\d\d)?$/ ],
       ] ], 
