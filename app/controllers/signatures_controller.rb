@@ -307,14 +307,15 @@ class SignaturesController < ApplicationController
         [:service,                      /^[\w ]+$/ ],
       ] ],
       [ params[:options], [
-        [:success_url,                  /^[\w\/\:\?\=\&]+$/ ],
-        [:failure_url,                  /^[\w\/\:\?\=\&]+$/ ],
+        # Review: strict URL validation is very difficult
+        #[:success_url,                  /^[\w\/\:\?\=\&]+$/ ],
+        #[:failure_url,                  /^[\w\/\:\?\=\&]+$/ ],
       ] ],
       [ params, [
-        [:last_fill_first_names,        /^[[:alpha]\s]*$/ ],
-        [:last_fill_last_names,         /^[[:alpha]\s]*$/ ],
+        [:last_fill_first_names,        /^[[:alpha:]\s]*$/ ],
+        [:last_fill_last_names,         /^[[:alpha:]\s]*$/ ],
         [:last_fill_birth_date,         /^(\d\d\d\d-\d\d-\d\d)?$/ ],
-        [:last_fill_occupancy_county,   /^[[:alpha]\s]*$/ ],
+        [:last_fill_occupancy_county,   /^[[:alpha:]\s]*$/ ],
         [:authentication_token,         /^\h*$/ ],
         [:authenticated_at,             /^(\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d[+\-]\d\d:\d\d)?$/ ],
       ] ], 
@@ -327,8 +328,6 @@ class SignaturesController < ApplicationController
   end
 
   def validate_param(parameters, param_key, regexp)
-    p parameters[param_key]
-    p regexp.match(parameters[param_key])
     regexp.match(parameters[param_key]) or (Rails.logger.info "Failed parameter value for #{param_key}: '#{parameters[param_key]}'" and false)
   end
 

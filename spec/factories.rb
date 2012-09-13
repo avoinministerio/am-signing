@@ -11,5 +11,6 @@ FactoryGirl.define do
     accept_non_eu_server true
     accept_science true
     accept_publicity "Normal"
+    service "Alandsbankentesti"
   end
 end
