@@ -1,3 +1,5 @@
+#encoding: UTF-8
+
 class Signature < ActiveRecord::Base
   extend SignaturesHelper
 
@@ -11,6 +13,7 @@ class Signature < ActiveRecord::Base
 
   validates :idea_id, numericality: { only_integer: true }
   validates :citizen_id, numericality: { only_integer: true }
+  # It is complicated to whitelist characters for idea_title. Therefore only presence is validated.
   validates :idea_title, presence: true
   validates :idea_date, presence: true
   validates :idea_mac, presence: true, format: { with: /^\h+$/ }
