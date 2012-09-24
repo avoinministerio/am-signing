@@ -13,6 +13,7 @@ class Signature < ActiveRecord::Base
   validates :citizen_id, numericality: { only_integer: true }
   validates :idea_title, presence: true
   validates :idea_date, presence: true
+  validates :idea_mac, presence: true, format: { with: /^\h+$/ }
   validates :state, :inclusion => { :in => VALID_STATES }, if: "persisted?"
   validates :accept_publicity, :inclusion => { :in => VALID_ACCEPT_PUBLICITY_VALUES }
   validates :accept_general, presence: true, acceptance: {accept: true}
