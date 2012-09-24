@@ -298,7 +298,6 @@ class SignaturesController < ApplicationController
         [:idea_id,                      /^\d+$/ ],
         [:idea_title,                   /^[[[:alnum:]][[:punct:]]\.€\/:\(\),\-"!\+\?\=%' ]+$/  ],   # would [[:word:]] be better?
         [:idea_date,                    /^\d\d\d\d-\d\d-\d\d[T ]\d\d:\d\d:\d\d ?[+\-]\d\d:?\d\d$/ ],
-        [:idea_mac,                     /^\h+$/ ],
         [:citizen_id,                   /^\d+$/ ],
         [:accept_general,               /^(true|false)$/ ],
         [:accept_non_eu_server,         /^(true|false)$/ ],

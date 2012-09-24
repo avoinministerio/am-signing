@@ -22,6 +22,9 @@ describe Signature do
       it { should validate_numericality_of(:idea_id).only_integer }
       it { should validate_presence_of(:idea_title) }
 
+      it { should allow_value("ffaa11").for(:idea_mac) }
+      it { should_not allow_value("ffaakk").for(:idea_mac) }
+
       describe "accept_publicity" do
         it "should only allow valid values" do
           Signature::VALID_ACCEPT_PUBLICITY_VALUES.each do |s|
