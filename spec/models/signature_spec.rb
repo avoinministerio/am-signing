@@ -24,6 +24,9 @@ describe Signature do
 
       it { should allow_value("ffaa11").for(:idea_mac) }
       it { should_not allow_value("ffaakk").for(:idea_mac) }
+ 
+      it { should allow_value("2012-09-05T19:17:46+03:00").for(:idea_date) }
+      it { should_not allow_value("a random string").for(:idea_date) }
 
       describe "accept_publicity" do
         it "should only allow valid values" do
