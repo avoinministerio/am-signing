@@ -24,8 +24,8 @@ class Signature < ActiveRecord::Base
   validates :accept_science, presence: true, acceptance: {accept: true}
   validates :vow, presence: true, acceptance: {accept: true}, if: "signed?"
   validates :occupancy_county, inclusion: { in: self.municipalities }, if: "signed?"
-  validates :first_names, presence: true, if: "names_required?"
-  validates :last_name, presence: true, if: "names_required?"
+  validates :first_names, presence: true
+  validates :last_name, presence: true
   validates :birth_date, presence: true, if: "authenticated?"
   validates :service, presence: true
   validates :success_auth_url, presence: true
@@ -78,10 +78,6 @@ class Signature < ActiveRecord::Base
   end
 
   private
-
-  def names_required?
-    %w(signed).include? self.state
-  end
 
   def expire
     Rails.logger.info "Signature #{self.id} expired"

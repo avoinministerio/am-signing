@@ -12,5 +12,7 @@ FactoryGirl.define do
     accept_science true
     accept_publicity "Normal"
     service "Alandsbankentesti"
+    first_names "Jorma-Iisakki"
+    last_name "Keinonen"
   end
 end
