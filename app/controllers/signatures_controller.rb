@@ -295,7 +295,6 @@ class SignaturesController < ApplicationController
 
   def validate_begin_authenticating_parameters!
     [ [ params[:message], [
-        [:idea_title,                   /^[[[:alnum:]][[:punct:]]\.€\/:\(\),\-"!\+\?\=%' ]+$/  ],   # would [[:word:]] be better?
       ] ],
       [ params[:options], [
         # Review: strict URL validation is very difficult

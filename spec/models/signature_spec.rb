@@ -1,3 +1,4 @@
+#encoding: UTF-8
 require 'spec_helper'
 
 describe Signature do
@@ -27,6 +28,8 @@ describe Signature do
  
       it { should allow_value("2012-09-05T19:17:46+03:00").for(:idea_date) }
       it { should_not allow_value("a random string").for(:idea_date) }
+
+      it { should allow_value("Hei' hyvä idea åä?.-+?&#€ sílvan^").for(:idea_title) }
 
       describe "accept_publicity" do
         it "should only allow valid values" do
