@@ -119,7 +119,7 @@ class SignaturesController < ApplicationController
       raise "Previously signed"
     end
 
-    @signature.authenticate params["last_fill_first_names"], params["last_fill_last_names"], params["last_fill_birth_date"]
+    @signature.authenticate params["first_names"], params["last_name"], params["last_fill_birth_date"]
     @signature.occupancy_county = params["last_fill_occupancy_county"]
     @signature.save
 
@@ -295,7 +295,7 @@ class SignaturesController < ApplicationController
       [:idea_id, :idea_title, :idea_date, :idea_mac, 
        :citizen_id, 
        :accept_general, :accept_non_eu_server, :accept_publicity, :accept_science,
-       :service, :success_auth_url
+       :service, :first_names, :last_name
       ].map do |key| 
         raise "unknown param #{key}" unless parameters[:message].has_key? key
         [key, parameters[:message][key]]
@@ -304,7 +304,7 @@ class SignaturesController < ApplicationController
         raise "unknown param #{key}" unless parameters[:options].has_key? key
         [key, parameters[:options][key]]
       end +
-      [:last_fill_first_names, :last_fill_last_names, :last_fill_birth_date, :last_fill_occupancy_county, 
+      [:last_fill_birth_date, :last_fill_occupancy_county, 
        :authentication_token, :authenticated_at].map do |key| 
         raise "unknown param #{key}" unless parameters.has_key? key
         [key, parameters[key]]
@@ -321,8 +321,6 @@ class SignaturesController < ApplicationController
         #[:failure_url,                  /^[\w\/\:\?\=\&]+$/ ],
       ] ],
       [ params, [
-        [:last_fill_first_names,        /^[[:alpha:]\s]*$/ ],
-        [:last_fill_last_names,         /^[[:alpha:]\s]*$/ ],
         [:last_fill_birth_date,         /^(\d\d\d\d-\d\d-\d\d)?$/ ],
         [:last_fill_occupancy_county,   /^[[:alpha:]\s]*$/ ],
         [:authentication_token,         /^\h*$/ ],
