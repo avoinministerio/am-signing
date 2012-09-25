@@ -7,10 +7,6 @@ module Signing
       OpenSSL::HMAC.hexdigest(OpenSSL::Digest::SHA256.new, key, message).upcase
     end
 
-    def sign_array key, array
-      sign key, array.join("&") + "&"
-    end
-
-    module_function :sign, :sign_array
+    module_function :sign
   end
 end
