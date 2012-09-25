@@ -1,11 +1,12 @@
 #encoding: UTF-8
 
 class InvalidMac < StandardError
-	def initialize(params, param_string, mac_param_string, requestor_secret)
-		@params, @param_string, @mac_param_string, @requestor_secret = params, param_string, mac_param_string, requestor_secret
+	def initialize(params)
+		@params = params
+    Rails.logger.info self.to_s
 	end
+
   def to_s
-  	Rails.logger.info "Invalid MAC #{@params} || #{@param_string} || #{@mac_param_string} || #{@requestor_secret}"
-    "Invalid MAC"
+    "Invalid MAC for params #{@params}"
   end
 end
