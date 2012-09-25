@@ -9,12 +9,13 @@ class SignaturesController < ApplicationController
   rescue_from ActiveRecord::RecordNotFound, :with => :record_not_found
   rescue_from SignatureExpired,             :with => :signature_expired
   rescue_from InvalidMac,                   :with => :invalid_mac
+  rescue_from InvalidParams,                :with => :invalid_params
 
   respond_to :html
 
   # Start signing an idea
   def begin_authenticating
-    raise InvalidMac.new(params) unless RequestValidator.valid?(params, params[:requestor_identifying_mac])
+    RequestValidator.validate!(params, params[:requestor_identifying_mac])
     validate_begin_authenticating_parameters!
 
     # TODO: Could be checked that user has not signed already, but it is not required
@@ -384,6 +385,10 @@ class SignaturesController < ApplicationController
 
   def signature_expired
     render :text => "403 Signature Expired", :status => 403
+  end
+
+  def invalid_params
+    render :text => "403 Invalid Params", :status => 403
   end
 
   def current_citizen_id

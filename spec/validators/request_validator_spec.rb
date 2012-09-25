@@ -66,16 +66,16 @@ describe 'RequestValidator' do
       }
     end
 
-    it "return true if params and signature are valid" do
-      RequestValidator.valid?(valid_params, valid_signature).should be_true
+    it "does not raise with valid params" do
+      RequestValidator.validate!(valid_params, valid_signature)
     end
 
-    it "return false if params are valid but signature invalid" do
-      RequestValidator.valid?(invalid_params, valid_signature).should be_false
+    it "raises an error with valid params and invalid signature" do
+      expect { RequestValidator.validate!(valid_params, invalid_signature).should be_false }.to raise_error InvalidParams
     end
 
-    it "return false if params are invalid and signature invalid" do
-      RequestValidator.valid?(invalid_params, invalid_signature).should be_false
+    it "raises an error with invalid params and valid signature" do
+      expect { RequestValidator.validate!(invalid_params, valid_signature).should be_false }.to raise_error InvalidParams
     end
 
   end
