@@ -14,7 +14,7 @@ class SignaturesController < ApplicationController
 
   # Start signing an idea
   def begin_authenticating
-    validate_requestor!
+    raise InvalidMac.new(params) unless RequestValidator.valid?(params, params[:requestor_identifying_mac])
     validate_begin_authenticating_parameters!
 
     # TODO: Could be checked that user has not signed already, but it is not required
@@ -281,35 +281,6 @@ class SignaturesController < ApplicationController
     secret.split(//).each_slice(2){|a| str += a.join("").hex.chr}
     Rails.logger.info(str.inspect)
     str
-  end
-
-  def validate_requestor!
-    param_string = requestor_params_as_string(params) + "&requestor_secret=#{ENV['requestor_secret']}"
-    unless params[:requestor_identifying_mac] == mac(param_string)
-      raise InvalidMac.new(params.dup, param_string, mac(param_string), ENV['requestor_secret'])
-    end
-  end
-
-  def requestor_params_as_string(parameters)
-    mapped_params = 
-      [:idea_id, :idea_title, :idea_date, :idea_mac, 
-       :citizen_id, 
-       :accept_general, :accept_non_eu_server, :accept_publicity, :accept_science,
-       :service, :first_names, :last_name
-      ].map do |key| 
-        raise "unknown param #{key}" unless parameters[:message].has_key? key
-        [key, parameters[:message][key]]
-      end +
-      [:success_url, :failure_url].map do |key| 
-        raise "unknown param #{key}" unless parameters[:options].has_key? key
-        [key, parameters[:options][key]]
-      end +
-      [:last_fill_birth_date, :last_fill_occupancy_county, 
-       :authentication_token, :authenticated_at].map do |key| 
-        raise "unknown param #{key}" unless parameters.has_key? key
-        [key, parameters[key]]
-      end
-    param_string = mapped_params.map{|key, value| h={}; h[key] = value; h.to_param }.join("&")
   end
 
   def validate_begin_authenticating_parameters!

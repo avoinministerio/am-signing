@@ -35,9 +35,8 @@ describe SignaturesController do
         last_fill_occupancy_county: "Helsinki",
         authentication_token: "",
         authenticated_at: "2012-09-10T19:17:46+03:00" }
-        #puts SignaturesController.new.send(:requestor_params_as_string, @params)
 
-        @params[:requestor_identifying_mac] = Digest::SHA256.hexdigest(SignaturesController.new.send(:requestor_params_as_string, @params) + "&requestor_secret=#{ENV['requestor_secret']}").upcase 
+        @params[:requestor_identifying_mac] = Signing::HmacSha256.sign(ENV['requestor_secret'], @params)
     end
 
     it "should return 200" do
