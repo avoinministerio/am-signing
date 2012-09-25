@@ -73,7 +73,7 @@ describe SignaturesController do
     it "shows 403 error page if the HMAC does not match" do
       @params[:requestor_identifying_mac] = "foobar"
       get :begin_authenticating, @params
-      response.body.should include("Invalid MAC")
+      response.body.should include("Invalid Params")
       response.status.should == 403
     end
   end
