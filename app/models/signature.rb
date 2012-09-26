@@ -7,7 +7,7 @@ class Signature < ActiveRecord::Base
 
   attr_accessible :first_names, :last_name, :birth_date, :occupancy_county, :vow,
     :accept_general, :accept_non_eu_server, :accept_publicity, :accept_science,
-    :idea_id, :citizen_id, :idea_title, :idea_date, :idea_mac, :service
+    :idea_id, :citizen_id, :idea_title, :idea_date, :idea_mac, :service, :success_auth_url
 
   validates :idea_id, numericality: { only_integer: true }
   validates :citizen_id, numericality: { only_integer: true }
@@ -24,6 +24,7 @@ class Signature < ActiveRecord::Base
   validates :last_name, presence: true, if: "names_required?"
   validates :birth_date, presence: true, if: "authenticated?"
   validates :service, presence: true
+  validates :success_auth_url, presence: true
 
   before_create :generate_stamp
   before_create :initialize_state
