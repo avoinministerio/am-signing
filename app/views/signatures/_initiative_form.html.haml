@@ -1,19 +1,23 @@
-Seuraavien kenttien tiedot tulee olla juuri kuten ne ovat Väestörekisterikeskuksella. Voit täyttää lomakkeen vain omasta puolestasi, eli et voi täyttää lomaketta kenenkään muun puolesta. Kansalaisaloitelain 16 pykälän mukaan rangaistus väärän henkilötiedon antamisesta on rikoslain 
-%a{href: "http://www.finlex.fi/fi/laki/ajantasa/1889/18890039001"}16 luvun 5 § tai 8 § mukainen.
+%p Voit nyt allekirjoittaa lakialoitteita sähköisesti. Tunnistautuminen on voimassa 20 minuuttia.
+
+%p 
+  Seuraavien kenttien tiedot tulee olla juuri kuten ne ovat Väestörekisterikeskuksella. Voit täyttää lomakkeen vain omasta puolestasi, eli et voi täyttää lomaketta kenenkään muun puolesta. Kansalaisaloitelain 16 pykälän mukaan rangaistus väärän henkilötiedon antamisesta on rikoslain 
+  %a{href: "http://www.finlex.fi/fi/laki/ajantasa/1889/18890039001"}16 luvun 5 § tai 8 § mukainen.
 .linebreak
+
 %h3 Kannatusilmoitus
 
-Idean otsikko
-=f.input :idea_title,   :disabled => true
+Idea:
+=@signature.idea_title
 
-Idean päivämäärä
-=f.input :idea_date,    :disabled => true
+Idean päivämäärä: 
+=@signature.idea_date
 
-Kannatusilmoituksen päivämäärä
-=f.input :signing_date, :disabled => true
+Kannatusilmoituksen jätön päivämäärä:
+=@signature.signing_date
 
-Syntymäaikasi on alustettu tunnistamispalvelusta saaduilla tiedoilla, et voi muuttaa sitä.
-=f.input :birth_date,   :disabled => true
+Syntymäaikasi on alustettu tunnistamispalvelusta saaduilla tiedoilla, et voi muuttaa sitä:
+=@signature.birth_date
 
 %h4 Täytettävät tiedot
 .linebreak
