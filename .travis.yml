@@ -8,12 +8,8 @@ bundler_args: "--without production development"
 
 env:
   - DB=sqlite3
-  - requestor_secret=siikret
-  - SECRET_Alandsbankentesti=bank_secret
-  - RAILS_ENV=test
-  - RACK_ENV=test
 
-script: "bundle exec rake db:migrate spec"
+script: "RAILS_ENV=test requestor_secret=siikret SECRET_Alandsbankentesti=bank_secret  bundle exec rake db:migrate spec"
 
 before_script:
   - "cp config/database.travis.$DB.yml config/database.yml"
