@@ -9,13 +9,13 @@ class SignaturesController < ApplicationController
   rescue_from ActiveRecord::RecordNotFound, :with => :record_not_found
   rescue_from SignatureExpired,             :with => :signature_expired
   rescue_from InvalidMac,                   :with => :invalid_mac
+  rescue_from InvalidParams,                :with => :invalid_params
 
   respond_to :html
 
   # Start signing an idea
   def begin_authenticating
-    validate_requestor!
-    validate_begin_authenticating_parameters!
+    RequestValidator.validate!(params, params[:requestor_identifying_mac])
 
     # TODO: Could be checked that user has not signed already, but it is not required
 
@@ -24,18 +24,12 @@ class SignaturesController < ApplicationController
     session[:current_citizen_id]    = @signature.citizen_id
     session[:am_success_url]        = params[:options][:success_url]
     session[:am_failure_url]        = params[:options][:failure_url]
-    
-    if params[:message] and (params[:message][:service] == "shortcut")
-      birth_date, authenticated_at, authentication_token = params[:last_fill_birth_date], params[:authenticated_at], params[:authentication_token]
-      if( birth_date and parse_datetime(birth_date) and 
-          authenticated_at and parse_datetime(authenticated_at) and 
-          authentication_token and authentication_token =~ /^[0-9A-F]+$/ and
-          valid_authentication_token?(birth_date, authenticated_at, authentication_token) and 
-          authentication_age(authenticated_at) < minutes(2) )
+
+    if params[:message][:service] == "shortcut"
+      if ShortcutTokenValidator.valid? params[:last_fill_birth_date], params[:authenticated_at], params[:authentication_token]
         return shortcut_returning
       else
-        redirect_to(session[:am_failure_url])
-        return
+        return redirect_to(session[:am_failure_url])
       end
     end
 
@@ -119,7 +113,7 @@ class SignaturesController < ApplicationController
       raise "Previously signed"
     end
 
-    @signature.authenticate params["last_fill_first_names"], params["last_fill_last_names"], params["last_fill_birth_date"]
+    @signature.authenticate params["first_names"], params["last_name"], params["last_fill_birth_date"]
     @signature.occupancy_county = params["last_fill_occupancy_county"]
     @signature.save
 
@@ -283,74 +277,6 @@ class SignaturesController < ApplicationController
     str
   end
 
-  def validate_requestor!
-    param_string = requestor_params_as_string(params) + "&requestor_secret=#{ENV['requestor_secret']}"
-    unless params[:requestor_identifying_mac] == mac(param_string)
-      raise InvalidMac.new(params.dup, param_string, mac(param_string), ENV['requestor_secret'])
-    end
-  end
-
-  def requestor_params_as_string(parameters)
-    mapped_params = 
-      [:idea_id, :idea_title, :idea_date, :idea_mac, 
-       :citizen_id, 
-       :accept_general, :accept_non_eu_server, :accept_publicity, :accept_science,
-       :service, :success_auth_url
-      ].map do |key| 
-        raise "unknown param #{key}" unless parameters[:message].has_key? key
-        [key, parameters[:message][key]]
-      end +
-      [:success_url, :failure_url].map do |key| 
-        raise "unknown param #{key}" unless parameters[:options].has_key? key
-        [key, parameters[:options][key]]
-      end +
-      [:last_fill_first_names, :last_fill_last_names, :last_fill_birth_date, :last_fill_occupancy_county, 
-       :authentication_token, :authenticated_at].map do |key| 
-        raise "unknown param #{key}" unless parameters.has_key? key
-        [key, parameters[key]]
-      end
-    param_string = mapped_params.map{|key, value| h={}; h[key] = value; h.to_param }.join("&")
-  end
-
-  def validate_begin_authenticating_parameters!
-    [ [ params[:message], [
-        [:idea_id,                      /^\d+$/ ],
-        [:idea_title,                   /^[[[:alnum:]][[:punct:]]\.€\/:\(\),\-"!\+\?\=%' ]+$/  ],   # would [[:word:]] be better?
-        [:idea_date,                    /^\d\d\d\d-\d\d-\d\d[T ]\d\d:\d\d:\d\d ?[+\-]\d\d:?\d\d$/ ],
-        [:idea_mac,                     /^\h+$/ ],
-        [:citizen_id,                   /^\d+$/ ],
-        [:accept_general,               /^(true|false)$/ ],
-        [:accept_non_eu_server,         /^(true|false)$/ ],
-        [:accept_publicity,             /^(Normal|Immediately)$/ ],
-        [:accept_science,               /^(true|false)$/ ],
-        [:service,                      /^[\w ]+$/ ],
-        [:success_auth_url,             /^[\w\/\:\?\=\&]+$/ ],
-      ] ],
-      [ params[:options], [
-        # Review: strict URL validation is very difficult
-        #[:success_url,                  /^[\w\/\:\?\=\&]+$/ ],
-        #[:failure_url,                  /^[\w\/\:\?\=\&]+$/ ],
-      ] ],
-      [ params, [
-        [:last_fill_first_names,        /^[[:alpha:]\s]*$/ ],
-        [:last_fill_last_names,         /^[[:alpha:]\s]*$/ ],
-        [:last_fill_birth_date,         /^(\d\d\d\d-\d\d-\d\d)?$/ ],
-        [:last_fill_occupancy_county,   /^[[:alpha:]\s]*$/ ],
-        [:authentication_token,         /^\h*$/ ],
-        [:authenticated_at,             /^(\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d[+\-]\d\d:\d\d)?$/ ],
-      ] ], 
-    ].map { |parameters, param_spec| validate_params(parameters, param_spec) }.all? or raise "Invalid parameters"
-  end
-
-  # used to validate hashes of parameters
-  def validate_params(parameters, param_spec)
-    param_spec.map {|param_key, regexp| validate_param(parameters, param_key, regexp) }.all?
-  end
-
-  def validate_param(parameters, param_key, regexp)
-    regexp.match(parameters[param_key]) or (Rails.logger.info "Failed parameter value for #{param_key}: '#{parameters[param_key]}'" and false)
-  end
-
   def mac(string)
     Digest::SHA256.new.update(string).hexdigest.upcase
   end
@@ -428,30 +354,11 @@ class SignaturesController < ApplicationController
     render :text => "403 Signature Expired", :status => 403
   end
 
+  def invalid_params
+    render :text => "403 Invalid Params", :status => 403
+  end
+
   def current_citizen_id
     session[:current_citizen_id]
   end
-
-  def parse_datetime(str)
-    if str =~ /\d\d\d\d-\d\d-\d\d/
-      begin 
-        DateTime.parse(str)
-      rescue
-        nil
-      end
-    else 
-      nil
-    end
-  end
-
-  def authentication_age(authenticated_at)
-    (DateTime.now - DateTime.parse(authenticated_at))
-  end
-
-  def minutes(mins)
-    mins_of_day = 1.0/24/60
-    mins * mins_of_day
-  end
-
-
 end

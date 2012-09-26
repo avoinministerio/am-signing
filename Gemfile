@@ -29,6 +29,7 @@ group :test, :development do
   gem "rspec-rails", "~> 2.0"
   gem "shoulda-matchers"
   gem 'sqlite3'
+  gem 'timecop'
 end
 
 group :production do
