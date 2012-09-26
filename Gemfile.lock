@@ -189,6 +189,7 @@ DEPENDENCIES
   sass-rails
   shoulda-matchers
   simple_form
+  spork
   sqlite3
   therubyracer
   twitter-bootstrap-rails

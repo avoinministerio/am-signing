@@ -24,6 +24,7 @@ end
 
 group :test, :development do
   gem "factory_girl_rails"
+  gem "spork"
   gem "rspec-rails", "~> 2.0"
   gem "shoulda-matchers"
   gem 'sqlite3'
