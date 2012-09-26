@@ -1,0 +1,23 @@
+language: ruby
+
+rvm:
+  - 1.9.3
+  - 1.9.2
+
+bundler_args: "--without production development"
+
+env:
+  - DB=sqlite3
+  - requestor_secret=siikret
+  - SECRET_Alandsbankentesti=bank_secret
+  - RAILS_ENV=test
+  - RACK_ENV=test
+
+script: "bundle exec rake db:migrate spec"
+
+before_script:
+  - "cp config/database.travis.$DB.yml config/database.yml"
+  - "cp config/api_keys/test.travis.yml config/api_keys/test.yml"
+
+notifications:
+  email: travis-notifications@avoinministerio.fi
