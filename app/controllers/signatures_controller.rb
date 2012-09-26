@@ -27,16 +27,10 @@ class SignaturesController < ApplicationController
     session[:am_failure_url]        = params[:options][:failure_url]
     
     if params[:message] and (params[:message][:service] == "shortcut")
-      birth_date, authenticated_at, authentication_token = params[:last_fill_birth_date], params[:authenticated_at], params[:authentication_token]
-      if( birth_date and parse_datetime(birth_date) and 
-          authenticated_at and parse_datetime(authenticated_at) and 
-          authentication_token and authentication_token =~ /^[0-9A-F]+$/ and
-          valid_authentication_token?(birth_date, authenticated_at, authentication_token) and 
-          authentication_age(authenticated_at) < minutes(2) )
+      if ShortcutTokenValidator.valid? params[:last_fill_birth_date], params[:authenticated_at], params[:authentication_token]
         return shortcut_returning
       else
-        redirect_to(session[:am_failure_url])
-        return
+        return redirect_to(session[:am_failure_url])
       end
     end
 
