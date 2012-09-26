@@ -25,8 +25,8 @@ class SignaturesController < ApplicationController
     session[:current_citizen_id]    = @signature.citizen_id
     session[:am_success_url]        = params[:options][:success_url]
     session[:am_failure_url]        = params[:options][:failure_url]
-    
-    if params[:message] and (params[:message][:service] == "shortcut")
+
+    if params[:message][:service] == "shortcut"
       if ShortcutTokenValidator.valid? params[:last_fill_birth_date], params[:authenticated_at], params[:authentication_token]
         return shortcut_returning
       else
