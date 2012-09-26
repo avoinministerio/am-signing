@@ -1,6 +1,9 @@
 $sans_serif: "Segoe WP", "Lucida Grande", "Lucida Sans", sans-serif;
 $serif: "Georgia";
 
+$violet: #473161;
+$turquoise: #29abe2;
+
 body {
   font-family: $sans_serif;
 }
@@ -185,5 +188,10 @@ input[type=submit], a.button {
   margin-top: 10px;
 }
 
-
+b.all {
+  font-family: $serif;
+  font-size: 120%;
+  font-weight: bold;
+  color: $turquoise;
+}
 

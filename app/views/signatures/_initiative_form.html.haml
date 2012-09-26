@@ -7,22 +7,23 @@
 
 %h3 Kannatusilmoitus
 
-Idea:
-=@signature.idea_title
+.basicinfo
+  .idea=@signature.idea_title
 
-Idean päivämäärä: 
-=@signature.idea_date
+  .date-title Idean päivämäärä: 
+  .date= @signature.idea_date
 
-Kannatusilmoituksen jätön päivämäärä:
-=@signature.signing_date
+  .date-title Kannatusilmoituksen jätön päivämäärä:
+  .date= @signature.signing_date
 
-Syntymäaikasi on alustettu tunnistamispalvelusta saaduilla tiedoilla, et voi muuttaa sitä:
-=@signature.birth_date
+  .date-title Syntymäaikasi:
+  .date= @signature.birth_date
+  .explanation Syntymäaikasi on alustettu tunnistamispalvelusta saaduilla tiedoilla, et voi muuttaa sitä
 
 %h4 Täytettävät tiedot
 .linebreak
 Varmista, että seuraavassa kentässä on 
-%b kaikki 
+%b.all kaikki 
 etunimesi (usein useampi etunimi).
 =f.input :first_names
 

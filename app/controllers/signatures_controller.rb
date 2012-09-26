@@ -29,13 +29,25 @@ class SignaturesController < ApplicationController
     session[:am_success_url] = params[:options][:success_url]
     session[:am_failure_url] = params[:options][:failure_url]
     
-    birth_date, authenticated_at, authentication_token = params[:last_fill_birth_date], params[:authenticated_at], params[:authentication_token]
-    if( birth_date and parse_datetime(birth_date) and 
-        authenticated_at and parse_datetime(authenticated_at) and 
-        authentication_token and authentication_token =~ /^[0-9A-F]+$/ and
-        valid_authentication_token?(birth_date, authenticated_at, authentication_token) and 
-        authentication_age(authenticated_at) < minutes(2) )
-      return shortcut_returning
+    if params[:message] and (params[:message][:service] == "shortcut")
+      birth_date, authenticated_at, authentication_token = params[:last_fill_birth_date], params[:authenticated_at], params[:authentication_token]
+      if( birth_date and parse_datetime(birth_date) and 
+          authenticated_at and parse_datetime(authenticated_at) and 
+          authentication_token and authentication_token =~ /^[0-9A-F]+$/ and
+          valid_authentication_token?(birth_date, authenticated_at, authentication_token) and 
+          authentication_age(authenticated_at) < minutes(2) )
+        return shortcut_returning
+      else
+        redirect_to(session[:am_failure_url])
+        return
+      end
+    end
+
+    if not tupas_services.find {|ts| ts[:name] == params[:message][:service]}
+      # call with incorrect service yields failure
+      # this is intentional as service is omitted in case of previous authentication still valid
+      redirect_to(session[:am_failure_url])
+      return
     end
 
     @service = find_service params[:message][:service]
@@ -159,8 +171,7 @@ class SignaturesController < ApplicationController
     mac(birth_date.to_s + authenticated_at.to_s + authentication_token_secret)
   end
 
-  # This method should be replaced with TUPAS gem by jaakkos
-  def find_service name
+  def tupas_services
     services = [
       { vers:       "0001",
         rcvid:      "Elisa testi",
@@ -235,8 +246,11 @@ class SignaturesController < ApplicationController
         url:        "https://kultaraha.op.fi/cgi-bin/krcgi",
       },
     ]
+  end
 
-    service = services.find { |s| s[:name] == name }
+  # This method should be replaced with TUPAS gem by jaakkos
+  def find_service name
+    service = tupas_services.find { |s| s[:name] == name }
     raise ArgumentError.new("Service not found with name \"#{name}\"") unless service != nil
     
     set_defaults service
