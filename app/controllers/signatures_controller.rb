@@ -361,26 +361,4 @@ class SignaturesController < ApplicationController
   def current_citizen_id
     session[:current_citizen_id]
   end
-
-  def parse_datetime(str)
-    if str =~ /\d\d\d\d-\d\d-\d\d/
-      begin 
-        DateTime.parse(str)
-      rescue
-        nil
-      end
-    else 
-      nil
-    end
-  end
-
-  def authentication_age(authenticated_at)
-    (DateTime.now - DateTime.parse(authenticated_at))
-  end
-
-  def minutes(mins)
-    mins_of_day = 1.0/24/60
-    mins * mins_of_day
-  end
-
 end
