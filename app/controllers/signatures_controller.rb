@@ -25,19 +25,25 @@ class SignaturesController < ApplicationController
     session[:am_success_url]        = params[:options][:success_url]
     session[:am_failure_url]        = params[:options][:failure_url]
     
-    birth_date, authenticated_at, authentication_token = params[:last_fill_birth_date], params[:authenticated_at], params[:authentication_token]
-    if( birth_date and parse_datetime(birth_date) and 
-        authenticated_at and parse_datetime(authenticated_at) and 
-        authentication_token and authentication_token =~ /^[0-9A-F]+$/ and
-        valid_authentication_token?(birth_date, authenticated_at, authentication_token) and 
-        authentication_age(authenticated_at) < minutes(2) )
-      return shortcut_returning
+    if params[:message] and (params[:message][:service] == "shortcut")
+      birth_date, authenticated_at, authentication_token = params[:last_fill_birth_date], params[:authenticated_at], params[:authentication_token]
+      if( birth_date and parse_datetime(birth_date) and 
+          authenticated_at and parse_datetime(authenticated_at) and 
+          authentication_token and authentication_token =~ /^[0-9A-F]+$/ and
+          valid_authentication_token?(birth_date, authenticated_at, authentication_token) and 
+          authentication_age(authenticated_at) < minutes(2) )
+        return shortcut_returning
+      else
+        redirect_to(session[:am_failure_url])
+        return
+      end
     end
 
     if not tupas_services.find {|ts| ts[:name] == params[:message][:service]}
       # call with incorrect service yields failure
       # this is intentional as service is omitted in case of previous authentication still valid
       redirect_to(session[:am_failure_url])
+      return
     end
 
     @service = find_service params[:message][:service]
