@@ -6,7 +6,7 @@ module RequestValidator
   @@message = [:idea_id, :idea_title, :idea_date, :idea_mac,
                :citizen_id, :accept_general, :accept_non_eu_server,
                :accept_publicity, :accept_science,
-               :service, :first_names, :last_name]
+               :service, :first_names, :last_name, :success_auth_url]
   @@options = [:success_url, :failure_url]
   @@root =    [:last_fill_birth_date, :last_fill_occupancy_county,
                :authentication_token, :authenticated_at]

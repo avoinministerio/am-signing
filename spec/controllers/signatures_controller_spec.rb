@@ -3,13 +3,9 @@ require 'spec_helper'
 
 describe SignaturesController do
   describe "GET 'begin_authenticating'" do
-    
+
     let(:message) do
       {
-        idea_id: 5,
-        idea_title: "a title",
-        idea_date: "2012-09-05T19:17:46+03:00",
-        idea_mac: "23151216EAB9DE9C6647DE9BC2A03915",
         citizen_id: 6,
         first_names: "Matti Petteri",
         last_name: "Nykänen",
@@ -17,7 +13,12 @@ describe SignaturesController do
         accept_science: "true",
         accept_non_eu_server: "true",
         accept_general: "true",
-        service: "Alandsbanken testi"
+        service: "Alandsbanken testi",
+        idea_id: 5,
+        idea_title: "a title",
+        idea_date: "2012-09-05T19:17:46+03:00",
+        idea_mac: "23151216EAB9DE9C6647DE9BC2A03915",
+        success_auth_url: "http://foo.bar/auth"
       }
     end
 

@@ -9,7 +9,7 @@ describe 'RequestValidator' do
   end
 
   describe '#valid?' do
-    let(:valid_signature) { '7E9603B54930F841F7DB5C48ADF61F69A750C319451DC8D8A007EA3C1832BE7A' }
+    let(:valid_signature) { 'E1C0E4E79E04064B97D614817448BF3A68E05CF80C6BBBAD712349D9242A48A9' }
     let(:invalid_signature) { '00C843B753F2B2B8105873C6A570C2DF5B1C580FA5819629149AFD8FE5DB0921' }
 
     let(:valid_params) do
@@ -26,7 +26,8 @@ describe 'RequestValidator' do
           idea_id: 5,
           idea_title: "a title",
           idea_date: "2012-09-05T19:17:46+03:00",
-          idea_mac: "23151216EAB9DE9C6647DE9BC2A03915"
+          idea_mac: "23151216EAB9DE9C6647DE9BC2A03915",
+          success_auth_url: "http://foo.bar/auth"
         },
         options: {
           success_url: 'sfdfsd',

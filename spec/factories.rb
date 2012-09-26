@@ -14,5 +14,6 @@ FactoryGirl.define do
     service "Alandsbankentesti"
     first_names "Jorma-Iisakki"
     last_name "Keinonen"
+    success_auth_url "http://foo.bar"
   end
 end
