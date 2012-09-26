@@ -16,7 +16,6 @@ class SignaturesController < ApplicationController
   # Start signing an idea
   def begin_authenticating
     RequestValidator.validate!(params, params[:requestor_identifying_mac])
-    validate_begin_authenticating_parameters!
 
     # TODO: Could be checked that user has not signed already, but it is not required
 
@@ -276,32 +275,6 @@ class SignaturesController < ApplicationController
     secret.split(//).each_slice(2){|a| str += a.join("").hex.chr}
     Rails.logger.info(str.inspect)
     str
-  end
-
-  def validate_begin_authenticating_parameters!
-    [ [ params[:message], [
-      ] ],
-      [ params[:options], [
-        # Review: strict URL validation is very difficult
-        #[:success_url,                  /^[\w\/\:\?\=\&]+$/ ],
-        #[:failure_url,                  /^[\w\/\:\?\=\&]+$/ ],
-      ] ],
-      [ params, [
-        [:last_fill_birth_date,         /^(\d\d\d\d-\d\d-\d\d)?$/ ],
-        [:last_fill_occupancy_county,   /^[[:alpha:]\s]*$/ ],
-        [:authentication_token,         /^\h*$/ ],
-        [:authenticated_at,             /^(\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d[+\-]\d\d:\d\d)?$/ ],
-      ] ], 
-    ].map { |parameters, param_spec| validate_params(parameters, param_spec) }.all? or raise "Invalid parameters"
-  end
-
-  # used to validate hashes of parameters
-  def validate_params(parameters, param_spec)
-    param_spec.map {|param_key, regexp| validate_param(parameters, param_key, regexp) }.all?
-  end
-
-  def validate_param(parameters, param_key, regexp)
-    regexp.match(parameters[param_key]) or (Rails.logger.info "Failed parameter value for #{param_key}: '#{parameters[param_key]}'" and false)
   end
 
   def mac(string)
