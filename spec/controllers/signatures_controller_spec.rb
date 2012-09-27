@@ -3,19 +3,22 @@ require 'spec_helper'
 
 describe SignaturesController do
   describe "GET 'begin_authenticating'" do
-    
+
     let(:message) do
       {
-        idea_id: 5,
-        idea_title: "a title",
-        idea_date: "2012-09-05T19:17:46+03:00",
-        idea_mac: "23151216EAB9DE9C6647DE9BC2A03915",
         citizen_id: 6,
+        first_names: "Matti Petteri",
+        last_name: "Nykänen",
         accept_publicity: "Normal",
         accept_science: "true",
         accept_non_eu_server: "true",
         accept_general: "true",
-        service: "Alandsbanken testi"
+        service: "Alandsbanken testi",
+        idea_id: 5,
+        idea_title: "a title",
+        idea_date: "2012-09-05T19:17:46+03:00",
+        idea_mac: "23151216EAB9DE9C6647DE9BC2A03915",
+        success_auth_url: "http://foo.bar/auth"
       }
     end
 
@@ -30,14 +33,11 @@ describe SignaturesController do
         message: message, 
         options: { success_url: @am_success_url, failure_url: @am_failure_url },
         last_fill_birth_date: "1985-01-06",
-        last_fill_first_names: "Matti Petteri",
-        last_fill_last_names: "Nykanen",
         last_fill_occupancy_county: "Helsinki",
         authentication_token: "",
         authenticated_at: "2012-09-10T19:17:46+03:00" }
-        #puts SignaturesController.new.send(:requestor_params_as_string, @params)
 
-        @params[:requestor_identifying_mac] = Digest::SHA256.hexdigest(SignaturesController.new.send(:requestor_params_as_string, @params) + "&requestor_secret=#{ENV['requestor_secret']}").upcase 
+        @params[:requestor_identifying_mac] = Signing::HmacSha256.sign(ENV['requestor_secret'], @params)
     end
 
     it "should return 200" do
@@ -74,7 +74,7 @@ describe SignaturesController do
     it "shows 403 error page if the HMAC does not match" do
       @params[:requestor_identifying_mac] = "foobar"
       get :begin_authenticating, @params
-      response.body.should include("Invalid MAC")
+      response.body.should include("Invalid Params")
       response.status.should == 403
     end
   end

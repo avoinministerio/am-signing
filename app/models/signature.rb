@@ -1,3 +1,5 @@
+#encoding: UTF-8
+
 class Signature < ActiveRecord::Base
   extend SignaturesHelper
 
@@ -11,8 +13,10 @@ class Signature < ActiveRecord::Base
 
   validates :idea_id, numericality: { only_integer: true }
   validates :citizen_id, numericality: { only_integer: true }
+  # It is complicated to whitelist characters for idea_title. Therefore only presence is validated.
   validates :idea_title, presence: true
   validates :idea_date, presence: true
+  validates :idea_mac, presence: true, format: { with: /^\h+$/ }
   validates :state, :inclusion => { :in => VALID_STATES }, if: "persisted?"
   validates :accept_publicity, :inclusion => { :in => VALID_ACCEPT_PUBLICITY_VALUES }
   validates :accept_general, presence: true, acceptance: {accept: true}
@@ -20,8 +24,8 @@ class Signature < ActiveRecord::Base
   validates :accept_science, presence: true, acceptance: {accept: true}
   validates :vow, presence: true, acceptance: {accept: true}, if: "signed?"
   validates :occupancy_county, inclusion: { in: self.municipalities }, if: "signed?"
-  validates :first_names, presence: true, if: "names_required?"
-  validates :last_name, presence: true, if: "names_required?"
+  validates :first_names, presence: true
+  validates :last_name, presence: true
   validates :birth_date, presence: true, if: "authenticated?"
   validates :service, presence: true
   validates :success_auth_url, presence: true
@@ -74,10 +78,6 @@ class Signature < ActiveRecord::Base
   end
 
   private
-
-  def names_required?
-    %w(signed).include? self.state
-  end
 
   def expire
     Rails.logger.info "Signature #{self.id} expired"

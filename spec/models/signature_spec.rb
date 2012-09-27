@@ -1,3 +1,4 @@
+#encoding: UTF-8
 require 'spec_helper'
 
 describe Signature do
@@ -22,6 +23,17 @@ describe Signature do
       it { should validate_numericality_of(:idea_id).only_integer }
       it { should validate_presence_of(:idea_title) }
 
+      it { should validate_presence_of(:first_names) }
+      it { should validate_presence_of(:last_name) }
+
+      it { should allow_value("ffaa11").for(:idea_mac) }
+      it { should_not allow_value("ffaakk").for(:idea_mac) }
+ 
+      it { should allow_value("2012-09-05T19:17:46+03:00").for(:idea_date) }
+      it { should_not allow_value("a random string").for(:idea_date) }
+
+      it { should allow_value("Hei' hyvä idea åä?.-+?&#€ sílvan^").for(:idea_title) }
+
       describe "accept_publicity" do
         it "should only allow valid values" do
           Signature::VALID_ACCEPT_PUBLICITY_VALUES.each do |s|
@@ -29,44 +41,6 @@ describe Signature do
           end
         end
         it { should_not allow_value("foo").for(:accept_publicity) }
-      end
-
-      describe "when in init state" do
-        it "allows blank first_names" do
-          should_not validate_presence_of(:first_names)
-        end
-
-        it "allows blank last_name" do
-          should_not validate_presence_of(:last_name)
-        end
-      end
-
-      describe "when in authenticated state" do
-        it "allow empty first_names" do
-          s = Signature.new
-          s.state = "authenticated"
-          s.should_not validate_presence_of(:first_names)
-        end
-
-        it "allow empty last_name" do
-          s = Signature.new
-          s.state = "authenticated"
-          s.should_not validate_presence_of(:last_name)
-        end
-      end
-
-      describe "when in signed state state" do
-        it "doesn't allow empty first_names" do
-          s = Signature.new
-          s.state = "signed"
-          s.should validate_presence_of(:first_names)
-        end
-
-        it "doesn't allow empty last_name" do
-          s = Signature.new
-          s.state = "signed"
-          s.should validate_presence_of(:last_name)
-        end
       end
     end
   end
