@@ -198,7 +198,25 @@ class SignaturesController < ApplicationController
         idtype:     "02",
         name:       "Sampo",
         url:        "https://verkkopankki.sampopankki.fi/SP/tupaha/TupahaApp",
-      }
+      },
+      { vers:       "0002",
+        rcvid:      "AVOIN MINISTERIÖ REK YHD RY",
+        idtype:     "02",
+        name:       "S-Pankki",
+        url:        "https://online.s-pankki.fi/service/identify",
+      },
+      { vers:       "0002",
+        rcvid:      "0024744039",
+        idtype:     "02",
+        name:       "Handelsbanken",
+        url:        "https://tunnistepalvelu.samlink.fi/TupasTunnistus/SHBtupas.html",
+      },
+      { vers:       "0002",
+        rcvid:      "0024744039",
+        idtype:     "02",
+        name:       "Aktia",
+        url:        "https://tunnistepalvelu.samlink.fi/TupasTunnistus/TupasServlet",
+      },
     ]
 
     service = services.find { |s| s[:name] == name }
@@ -238,13 +256,13 @@ class SignaturesController < ApplicationController
   end
 
   def service_secret(service_name)
-    secret_key = "SECRET_" + service_name.gsub(/\s/, "")
+    secret_key = "SECRET_" + service_name.gsub(/[\s\-]/, "")
 
     Rails.logger.info "Using key #{secret_key}"
     secret = ENV[secret_key] || ""
 
     # TODO: precalc the secret into environment variable, and remove this special handling
-    if service_name =~ /^Alandsbanken/ or service_name == "Tapiola"
+    if service_name =~ /^Alandsbanken/ or service_name == "Tapiola" or service_name == "S-Pankki"
       secret = secret_to_mac_string(secret)
       Rails.logger.info "Converting secret to #{secret}"
     end
@@ -342,7 +360,7 @@ class SignaturesController < ApplicationController
   end
 
   def service_name_to_param(service_name)
-    service_name.gsub(/\s+/, "")
+    service_name.gsub(/[\s\-]+/, "")
   end
 
   def valid_returning?(signature, service_name)
