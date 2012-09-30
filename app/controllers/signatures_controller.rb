@@ -217,6 +217,18 @@ class SignaturesController < ApplicationController
         name:       "Aktia",
         url:        "https://tunnistepalvelu.samlink.fi/TupasTunnistus/TupasServlet",
       },
+      { vers:       "0002",
+        rcvid:      "1028275M",
+        idtype:     "02",
+        name:       "Nordea",
+        url:        "https://solo3.nordea.fi/cgi-bin/SOLO3011",
+      },
+      { vers:       "0003",
+        rcvid:      "TUAVOINMINISTER",
+        idtype:     "02",
+        name:       "Osuuspankki",
+        url:        "https://kultaraha.op.fi/cgi-bin/krcgi",
+      },
     ]
 
     service = services.find { |s| s[:name] == name }
