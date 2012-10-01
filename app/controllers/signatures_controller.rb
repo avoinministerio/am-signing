@@ -334,7 +334,7 @@ class SignaturesController < ApplicationController
         [:accept_non_eu_server,         /^(true|false)$/ ],
         [:accept_publicity,             /^(Normal|Immediately)$/ ],
         [:accept_science,               /^(true|false)$/ ],
-        [:service,                      /^[\w ]+$/ ],
+        [:service,                      /^[\w \-]+$/ ],
       ] ],
       [ params[:options], [
         # Review: strict URL validation is very difficult
