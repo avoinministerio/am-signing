@@ -217,7 +217,7 @@ class SignaturesController < ApplicationController
         name:       "Aktia",
         url:        "https://tunnistepalvelu.samlink.fi/TupasTunnistus/TupasServlet",
       },
-      { vers:       "0002",
+      { vers:       "0003",
         rcvid:      "1028275M",
         idtype:     "02",
         name:       "Nordea",
