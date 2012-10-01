@@ -333,7 +333,7 @@ class SignaturesController < ApplicationController
         [:accept_general,               /^(true|false)$/ ],
         [:accept_non_eu_server,         /^(true|false)$/ ],
         [:accept_publicity,             /^(Normal|Immediately)$/ ],
-        [:accept_science,               /^(true|false)$/ ],
+#        [:accept_science,               /^(true|false)$/ ],
         [:service,                      /^[\w \-]+$/ ],
       ] ],
       [ params[:options], [
@@ -350,6 +350,7 @@ class SignaturesController < ApplicationController
         [:authenticated_at,             /^(\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d[+\-]\d\d:\d\d)?$/ ],
       ] ], 
     ].map { |parameters, param_spec| validate_params(parameters, param_spec) }.all? or raise "Invalid parameters"
+    params[:message][:accept_science] ||= "false" # can be empty, so let's make sure validation works
   end
 
   # used to validate hashes of parameters
