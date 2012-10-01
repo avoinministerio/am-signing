@@ -6,6 +6,7 @@ module SignaturesControllerHelpers
     # let's make sure lastname is just characters before interpolating it into regexp
     unless just_name_characters(lastname)
       Rails.logger.error "Lastname #{lastname.to_s} is not just characters"
+      lastname, firstnames = names.split(/ /, 2)
     else
       if m = /^\s*#{lastname}\s*/.match(names)          # known lastname is at the beginning
         firstnames = m.post_match
