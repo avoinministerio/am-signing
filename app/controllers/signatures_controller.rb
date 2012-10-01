@@ -6,6 +6,10 @@ class SignaturesController < ApplicationController
 
   include SignaturesControllerHelpers
 
+  #protect_from_forgery except: :returning
+  # For Sampo case
+  skip_before_filter :verify_authenticity_token, except: [:returning]
+
   rescue_from ActiveRecord::RecordNotFound, :with => :record_not_found
   rescue_from SignatureExpired,             :with => :signature_expired
   rescue_from InvalidMac,                   :with => :invalid_mac
