@@ -273,13 +273,14 @@ class SignaturesController < ApplicationController
   end
 
   def service_secret(service_name)
-    secret_key = "SECRET_" + service_name.gsub(/[\s\-]/, "")
+    compact_service_name = service_name.gsub(/[\s\-]/, "")
+    secret_key = "SECRET_" + compact_service_name
 
     Rails.logger.info "Using key #{secret_key}"
     secret = ENV[secret_key] || ""
 
     # TODO: precalc the secret into environment variable, and remove this special handling
-    if service_name =~ /^Alandsbanken/ or service_name == "Tapiola" or service_name == "S-Pankki"
+    if compact_service_name =~ /^Alandsbanken/ or compact_service_name == "Tapiola" or compact_service_name == "SPankki"
       secret = secret_to_mac_string(secret)
       Rails.logger.info "Converting secret to #{secret}"
     end
