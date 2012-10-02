@@ -205,7 +205,7 @@ class SignaturesController < ApplicationController
         url:        "https://verkkopankki.sampopankki.fi/SP/tupaha/TupahaApp",
       },
       { vers:       "0002",
-        rcvid:      "AVOIN MINISTERIÖ REK YHD RY",
+        rcvid:      "AVOINMINISTEID",
         idtype:     "02",
         name:       "S-Pankki",
         url:        "https://online.s-pankki.fi/service/identify",
