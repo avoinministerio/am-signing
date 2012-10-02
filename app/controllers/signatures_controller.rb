@@ -66,7 +66,8 @@ class SignaturesController < ApplicationController
     end
 
     birth_date = hetu_to_birth_date(params["B02K_CUSTID"])
-    first_names, last_name = guess_names(params["B02K_CUSTNAME"], @signature.first_names, @signature.last_name)
+    custname_in_utf8 = params["B02K_CUSTNAME"].force_encoding("ISO-8859-1").encode("UTF-8")
+    first_names, last_name = guess_names(custname_in_utf8, @signature.first_names, @signature.last_name)
 
     @signature.authenticate first_names, last_name, birth_date
 
