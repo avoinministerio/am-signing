@@ -35,7 +35,7 @@ class SignaturesController < ApplicationController
           authenticated_at and parse_datetime(authenticated_at) and 
           authentication_token and authentication_token =~ /^[0-9A-F]+$/ and
           valid_authentication_token?(birth_date, authenticated_at, authentication_token) and 
-          authentication_age(authenticated_at) < minutes(2) )
+          authentication_age(authenticated_at) < minutes(authentication_valid_mins) )
         return shortcut_returning
       else
         redirect_to(session[:am_failure_url])
@@ -465,5 +465,10 @@ class SignaturesController < ApplicationController
     mins_of_day = 1.0/24/60
     mins * mins_of_day
   end
+
+  def authentication_valid_mins
+    (ENV['AUTHENTICATION_VALID_MINUTES'] and ENV['AUTHENTICATION_VALID_MINUTES'].to_i) || 3
+  end
+
 
 end
