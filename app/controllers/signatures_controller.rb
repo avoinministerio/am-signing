@@ -264,7 +264,15 @@ class SignaturesController < ApplicationController
     service[:alg]       = "03"
   end
 
+  def ensure_stamp_length(signature, digits = 20)
+    while signature.stamp.length < digits
+      signature.stamp.concat(rand(10).to_s)
+    end
+    signature.save  # FIXME: add not-saving error processing
+  end
+
   def set_signature_specific_values signature, service
+    ensure_stamp_length(signature, 20) if service[:name] == "Sampo"
     service[:stamp] = signature.stamp
 
     server = "http" + (Rails.env == "development" ? "" : "s" ) + "://#{request.host_with_port}"
@@ -379,9 +387,9 @@ class SignaturesController < ApplicationController
   end
 
   def validate_param(parameters, param_key, regexp)
-    p parameters[param_key]
-    p regexp.match(parameters[param_key])
-    regexp.match(parameters[param_key]) or (Rails.logger.info "Failed parameter value for #{param_key}: '#{parameters[param_key]}'" and false)
+#    p parameters[param_key]
+#    p regexp.match(parameters[param_key])
+    regexp.match(parameters[param_key]) or (Rails.logger.info "Failed parameter value for #{param_key} and regexp #{regexp}: '#{parameters[param_key]}'" and false)
   end
 
   def mac(string)
