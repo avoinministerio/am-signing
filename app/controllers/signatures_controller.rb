@@ -272,11 +272,17 @@ class SignaturesController < ApplicationController
   end
 
   def set_signature_specific_values signature, service
-    ensure_stamp_length(signature, 20) if service[:name] == "Sampo"
-    service[:stamp] = signature.stamp
-
     server = "http" + (Rails.env == "development" ? "" : "s" ) + "://#{request.host_with_port}"
-    Rails.logger.info "Server is #{server}"
+
+    if service[:name] == "Sampo"
+      # Sampo requires exactly 20 char long stamp, let's make it so
+      ensure_stamp_length(signature, 20) 
+
+      # Sampo should use https anyway, won't work without
+      server = "https" + "://#{request.host_with_port}"
+      Rails.logger.info "Server for Sampo is #{server}"
+    end
+    service[:stamp] = signature.stamp
 
     service_name = service_name_to_param(service[:name])
     service[:retlink] = "#{server}/signatures/#{signature.id}/returning/#{service_name}"
